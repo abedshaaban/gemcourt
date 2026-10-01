@@ -43,12 +43,14 @@ export function OpponentPanel({
   online,
   isTurn,
   phase,
+  onReservedClick,
 }: {
   player: PublicPlayer
   index: number
   online: boolean
   isTurn: boolean
   phase: TurnPhase
+  onReservedClick?: (card: ReservedCard) => void // look-only view of a visible reserved card
 }) {
   return (
     <article className={cx('sp-opp', isTurn && 'is-turn')} aria-label={`${player.name}${isTurn ? ' (current turn)' : ''}`}>
@@ -82,7 +84,13 @@ export function OpponentPanel({
                   isHiddenCard(r) ? (
                     <CardBack key={r.id} tier={r.tier} size="sm" className="sp-peek" />
                   ) : (
-                    <DevCard key={r.id} card={r} size="sm" className="sp-peek" />
+                    <DevCard
+                      key={r.id}
+                      card={r}
+                      size="sm"
+                      className="sp-peek"
+                      onClick={onReservedClick ? () => onReservedClick(r) : undefined}
+                    />
                   ),
                 )}
               </div>
@@ -109,7 +117,6 @@ export function YourArea({
   index,
   online,
   isTurn,
-  canAct,
   playing,
   pending,
   onReservedClick,
@@ -118,7 +125,6 @@ export function YourArea({
   index: number
   online: boolean
   isTurn: boolean
-  canAct: boolean
   playing: boolean
   pending: boolean
   onReservedClick: (card: ReservedCard) => void
@@ -164,7 +170,7 @@ export function YourArea({
                 size="md"
                 deal
                 affordable={playing && canAfford(player.tokens, player.bonuses, r.cost)}
-                onClick={canAct ? () => onReservedClick(r) : undefined}
+                onClick={playing ? () => onReservedClick(r) : undefined}
                 disabled={pending}
                 blind={r.blind}
               />

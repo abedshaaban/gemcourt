@@ -35,7 +35,7 @@ export interface GameBoardProps {
 type Target =
   | { kind: 'market'; tier: Tier; index: number; card: Card }
   | { kind: 'deck'; tier: Tier }
-  | { kind: 'reserved'; card: ReservedCard }
+  | { kind: 'reserved'; card: ReservedCard; ownerId?: string } // ownerId: a rival's visible reserved card
 
 const TIER_ORDER: Tier[] = [3, 2, 1]
 
@@ -195,8 +195,11 @@ export function GameBoard({
 
   const closeTarget = useCallback(() => setTarget(null), [])
 
+  // Card modals open off-turn too, but only as a look-only view.
+  const readOnlyReason = canAct ? undefined : isMyTurn ? 'Finish your turn first.' : 'Not your turn — you can look, but not buy or reserve.'
+
   const doBuy = async () => {
-    if (!target || target.kind === 'deck') return
+    if (!canAct || !target || target.kind === 'deck' || (target.kind === 'reserved' && target.ownerId)) return
     const ok = await run({
       type: 'buy',
       source:
@@ -211,7 +214,7 @@ export function GameBoard({
   }
 
   const doReserve = async () => {
-    if (!target || target.kind === 'reserved') return
+    if (!canAct || !target || target.kind === 'reserved') return
     const ok = await run({
       type: 'reserve',
       source: target.kind === 'market' ? { kind: 'market', tier: target.tier, index: target.index } : { kind: 'deck', tier: target.tier },
@@ -236,7 +239,7 @@ export function GameBoard({
   const overlayOpen =
     rulesOpen ||
     confirmLeave ||
-    (canAct && target !== null) ||
+    (!!me && target !== null) ||
     !!discardNeeded ||
     (nobleNeeded && pendingNobles.length > 0) ||
     (state.status === 'finished' && !resultsHidden)
@@ -353,7 +356,7 @@ export function GameBoard({
                           deal
                           style={{ '--i': index } as CSSProperties}
                           affordable={!!me && playing && canAfford(me.tokens, me.bonuses, card.cost)}
-                          onClick={canAct ? () => setTarget({ kind: 'market', tier, index, card }) : undefined}
+                          onClick={me && playing ? () => setTarget({ kind: 'market', tier, index, card }) : undefined}
                           disabled={pending}
                         />
                       ) : (
@@ -408,7 +411,6 @@ export function GameBoard({
               index={colorIndex?.[me.id] ?? meIndex}
               online={connected[me.id] ?? true}
               isTurn={isMyTurn}
-              canAct={canAct}
               playing={playing}
               pending={pending}
               onReservedClick={(card) => setTarget({ kind: 'reserved', card })}
@@ -428,6 +430,7 @@ export function GameBoard({
                   online={!!connected[p.id]}
                   isTurn={playing && i === state.currentPlayerIndex}
                   phase={state.phase}
+                  onReservedClick={me && playing ? (card) => setTarget({ kind: 'reserved', card, ownerId: p.id }) : undefined}
                 />
               ))}
             </div>
@@ -450,7 +453,7 @@ export function GameBoard({
         </div>
       </aside>
 
-      {me && canAct && target?.kind === 'market' && (
+      {me && target?.kind === 'market' && (
         <CardActionModal
           card={target.card}
           me={me}
@@ -460,9 +463,10 @@ export function GameBoard({
           onBuy={doBuy}
           onReserve={doReserve}
           onClose={closeTarget}
+          readOnly={readOnlyReason}
         />
       )}
-      {me && canAct && target?.kind === 'reserved' && (
+      {me && target?.kind === 'reserved' && (
         <CardActionModal
           card={target.card}
           me={me}
@@ -472,6 +476,8 @@ export function GameBoard({
           onBuy={doBuy}
           onClose={closeTarget}
           fromReserve
+          readOnly={readOnlyReason}
+          owner={target.ownerId ? state.players.find((p) => p.id === target.ownerId) : undefined}
         />
       )}
       {me && canAct && target?.kind === 'deck' && (

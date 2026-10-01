@@ -7,7 +7,8 @@ import { Chip } from './Gem'
 import { Modal } from './Modal'
 import { GEM_NAME, ROMAN, cx } from './ui'
 
-function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
+/** What `me` would pay for `card`. `who` names someone else (e.g. a rival viewing their own reserve). */
+function PaymentLine({ me, card, who }: { me: PublicPlayer; card: Card; who?: string }) {
   const pay = computePayment(me.tokens, me.bonuses, card.cost)
   if (!pay) {
     // Per-color shortfall after bonuses and colored tokens; gold (wild) then covers part of the total.
@@ -16,7 +17,7 @@ function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
     const short = missing.reduce((s, c) => s + need(c), 0) - me.tokens.gold
     return (
       <div className="sp-pay is-short">
-        <span className="sp-pay__label">Can't afford</span>
+        <span className="sp-pay__label">{who ? `${who} can't afford` : "Can't afford"}</span>
         <span className="sp-pay__note">
           short by {short} gem{short === 1 ? '' : 's'}
         </span>
@@ -31,7 +32,7 @@ function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
         </span>
         {me.tokens.gold > 0 && (
           <span className="sp-pay__sub">
-            Missing per color — your {me.tokens.gold} gold is already counted in the total.
+            Per color, before gold — {who ? `${who}'s` : 'your'} {me.tokens.gold} gold is already counted in the total.
           </span>
         )}
       </div>
@@ -41,9 +42,9 @@ function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
   const saved = GEM_COLORS.reduce((s, c) => s + Math.min(card.cost[c], me.bonuses[c]), 0)
   return (
     <div className="sp-pay">
-      <span className="sp-pay__label">You pay</span>
+      <span className="sp-pay__label">{who ? `${who} would pay` : 'You pay'}</span>
       {spent.length === 0 ? (
-        <span className="sp-pay__note">nothing — your bonuses cover it</span>
+        <span className="sp-pay__note">nothing — {who ? 'their' : 'your'} bonuses cover it</span>
       ) : (
         <span className="sp-pay__chips">
           {spent.map((c) => (
@@ -74,6 +75,8 @@ export function CardActionModal({
   onReserve,
   onClose,
   fromReserve,
+  readOnly,
+  owner,
 }: {
   card: Card
   me: PublicPlayer
@@ -84,13 +87,19 @@ export function CardActionModal({
   onReserve?: () => void
   onClose: () => void
   fromReserve?: boolean
+  /** look-only view (e.g. off-turn): buttons stay visible but disabled, with this reason */
+  readOnly?: string
+  /** a rival's visible reserved card: show their payment, no actions */
+  owner?: PublicPlayer
 }) {
-  const affordable = computePayment(me.tokens, me.bonuses, card.cost) !== null
+  const payer = owner ?? me
+  const affordable = computePayment(payer.tokens, payer.bonuses, card.cost) !== null
   const reservedFull = me.reserved.length >= MAX_RESERVED
   const overflow = reserveOverflows(me, bankGold)
+  const locked = !!readOnly || pending
   return (
     <Modal
-      title={fromReserve ? 'Reserved card' : `Tier ${ROMAN[card.tier]} card`}
+      title={owner ? `${owner.name}'s reserved card` : fromReserve ? 'Reserved card' : `Tier ${ROMAN[card.tier]} card`}
       subtitle={`${card.points > 0 ? `${card.points} prestige · ` : ''}${GEM_NAME[card.bonus]} bonus`}
       onClose={onClose}
       className="sp-modal--card"
@@ -98,13 +107,20 @@ export function CardActionModal({
       <div className="sp-cardmodal">
         <DevCard card={card} size="lg" affordable={affordable} />
         <div className="sp-cardmodal__actions">
-          <PaymentLine me={me} card={card} />
-          <button type="button" className="btn btn-primary" disabled={!affordable || pending} onClick={onBuy} autoFocus={affordable}>
-            Buy card
-          </button>
-          {onReserve && (
+          <PaymentLine me={payer} card={card} who={owner?.name} />
+          {owner ? (
+            <p className="sp-hint">Only {owner.name} can buy this card.</p>
+          ) : (
             <>
-              <button type="button" className="btn" disabled={!canReserve || pending} onClick={onReserve}>
+              {readOnly && <p className="sp-hint sp-readonly">{readOnly}</p>}
+              <button type="button" className="btn btn-primary" disabled={!affordable || locked} onClick={onBuy} autoFocus={affordable && !readOnly}>
+                Buy card
+              </button>
+            </>
+          )}
+          {!owner && onReserve && (
+            <>
+              <button type="button" className="btn" disabled={!canReserve || locked} onClick={onReserve}>
                 Reserve{bankGold > 0 ? ' · +1 gold' : ''}
               </button>
               <p className="sp-hint">

@@ -767,7 +767,8 @@
   transition: transform 0.18s ease;
   transform-origin: top right;
 }
-.sp-peek:hover {
+.sp-peek:hover,
+.sp-peek.is-clickable:hover:not(:disabled) {
   position: relative;
   z-index: 5;
   transform: scale(2.1);
@@ -1400,6 +1401,12 @@
   font-style: italic;
   color: var(--text-muted);
   font-size: 15px;
+}
+.sp-readonly {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent-strong);
 }
 .sp-pay__sub {
   flex-basis: 100%;
