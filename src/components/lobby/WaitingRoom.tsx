@@ -164,6 +164,12 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
           <span className="muted">Waiting for {host?.name ?? 'the host'} to start…</span>
         )}
       </div>
+      {isHost && offline.length > 0 && (
+        <p className="muted" role="status" style={{ fontSize: 13, margin: '10px 0 0' }}>
+          Can't start while {offline.map((p) => (p.isHost ? `${p.name} (previous host)` : p.name)).join(', ')}{' '}
+          {offline.length === 1 ? 'is' : 'are'} offline. Wait for them to reconnect, or remove them to start without them.
+        </p>
+      )}
       <p className="error-text" role="alert">
         {error}
       </p>
