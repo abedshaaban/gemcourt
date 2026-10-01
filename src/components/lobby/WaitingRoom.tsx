@@ -53,6 +53,22 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
 
   const inviteUrl = `${lanUrls[0] ?? (typeof location !== 'undefined' ? location.origin : '')}/room/${view.code}`
 
+  // QR of the invite link for phones at the table. Client-only (lazy import, after mount) so SSR
+  // never renders it; skipped for localhost links, which another device couldn't open anyway.
+  const [qrSrc, setQrSrc] = useState<string | null>(null)
+  useEffect(() => {
+    const host = new URL(inviteUrl, location.href).hostname
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return setQrSrc(null)
+    let cancelled = false
+    import('qrcode')
+      .then((QR) => QR.toString(inviteUrl, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' }))
+      .then((svg) => !cancelled && setQrSrc(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [inviteUrl])
+
   async function copy(text: string, what: 'code' | 'link') {
     const ok = await copyText(text)
     setCopied(ok ? what : 'failed')
@@ -81,11 +97,15 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
           </button>
         </div>
       </div>
-      {lanUrls.length > 0 && (
-        <p className="share-hint">
-          Friends on your network can open <code>{inviteUrl}</code>
-          {copied === 'failed' && <span className="error-text"> — copy blocked by the browser, select it manually.</span>}
-        </p>
+      {(lanUrls.length > 0 || qrSrc) && (
+        <div className="share">
+          {qrSrc && <img className="share-qr" src={qrSrc} width={112} height={112} alt={`QR code for ${inviteUrl}`} />}
+          <p className="share-hint">
+            {qrSrc ? 'Scan with a phone, or open ' : 'Friends on your network can open '}
+            <code>{inviteUrl}</code>
+            {copied === 'failed' && <span className="error-text"> — copy blocked by the browser, select it manually.</span>}
+          </p>
+        </div>
       )}
 
       <h2>Waiting room</h2>

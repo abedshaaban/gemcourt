@@ -296,10 +296,21 @@ a {
   color: var(--accent-strong);
 }
 
+.share {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: -8px 0 20px;
+}
+.share-qr {
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: #fff; /* scanners need a light quiet zone around the code */
+}
 .share-hint {
   font-size: 13px;
   color: var(--text-muted);
-  margin: -8px 0 20px;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 .share-hint code {

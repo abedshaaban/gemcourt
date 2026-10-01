@@ -14,6 +14,9 @@ importers:
       '@tanstack/react-start':
         specifier: ^1.168.58
         version: 1.168.58(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.11)(vite@8.3.1(@types/node@26.6.3)(jiti@2.7.0))
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -42,9 +45,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.1(@types/node@26.6.3)(jiti@2.7.0))
-      qrcode:
-        specifier: ^1.5.4
-        version: 1.5.4
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
