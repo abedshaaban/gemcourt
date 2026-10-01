@@ -45,3 +45,5 @@ export type OpResult = { ok: true; playerId?: string; token?: string } | { ok: f
 export const NAME_MAX = 20
 /** How often a joined client sends a heartbeat (the server marks it offline after ~90s of silence, which tolerates background-tab timer throttling). */
 export const HEARTBEAT_MS = 10_000
+/** How often the server sends an SSE `ping` event; the client reconnects after ~3 missed pings (half-open streams). */
+export const SSE_PING_MS = 15_000

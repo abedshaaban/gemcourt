@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { subscribe } from '~/server/rooms'
+import { SSE_PING_MS } from '~/lib/protocol'
 import type { RoomView } from '~/lib/protocol'
 
 const MAX_QUEUED = 50
@@ -50,7 +51,8 @@ export const Route = createFileRoute('/api/rooms/$code/events')({
               return
             }
             if (closed) return unsubscribe() // first send failed while subscribing
-            ping = setInterval(() => write(`: ping\n\n`), 15000)
+            // A named event (not a comment) so the client can see it and detect a silently dead stream.
+            ping = setInterval(() => write(`event: ping\ndata: {}\n\n`), SSE_PING_MS)
             request.signal.addEventListener('abort', () => cleanup())
           },
           cancel() {

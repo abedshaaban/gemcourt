@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameAction } from '~/game/types'
 import type { OpResult, RoomInfo, RoomOp, RoomView } from './protocol'
-import { HEARTBEAT_MS } from './protocol'
+import { HEARTBEAT_MS, SSE_PING_MS } from './protocol'
 
 // ---------- Session storage (per browser tab, so several tabs = several players) ----------
 
@@ -122,8 +122,29 @@ export function useRoom(code: string) {
     const es = new EventSource(`/api/rooms/${encodeURIComponent(code)}/events${qs}`)
     setConn('connecting')
     let retryTimer: ReturnType<typeof setTimeout> | undefined
-    es.onopen = () => setConn('open')
+    // Watchdog: a half-open stream (Wi-Fi blip, sleep) may never error, so reconnect after prolonged silence.
+    let lastEvent = Date.now()
+    const touch = () => (lastEvent = Date.now())
+    const checkSilence = () => {
+      if (es.readyState === EventSource.CLOSED) return // missing, or the retry timer below already owns it
+      if (Date.now() - lastEvent < SSE_PING_MS * 3) return
+      es.close()
+      setConn('reconnecting')
+      setRetry((n) => n + 1)
+    }
+    const watchdog = setInterval(checkSilence, 5000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkSilence()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', checkSilence)
+    es.addEventListener('ping', touch)
+    es.onopen = () => {
+      touch()
+      setConn('open')
+    }
     es.onmessage = (e) => {
+      touch()
       const v: RoomView = JSON.parse(e.data)
       setView(v)
       setConn('open')
@@ -146,6 +167,9 @@ export function useRoom(code: string) {
     }
     return () => {
       clearTimeout(retryTimer)
+      clearInterval(watchdog)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', checkSilence)
       es.close()
     }
   }, [code, ready, session, retry])
