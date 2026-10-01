@@ -440,6 +440,14 @@ a {
   .room-code__actions .btn {
     flex: 1;
   }
+  /* Tighter player rows so your own name isn't squeezed by the You badge and Rename button. */
+  .player-list li {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .player-list li .btn-sm {
+    padding: 6px 8px;
+  }
 }
 
 .conn-banner {
