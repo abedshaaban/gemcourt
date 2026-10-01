@@ -21,6 +21,7 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
   const [nameDraft, setNameDraft] = useState(me?.name ?? '')
   const [copied, setCopied] = useState<'code' | 'link' | 'failed' | null>(null)
   const [lanUrls, setLanUrls] = useState<string[]>([])
+  const [publicUrl, setPublicUrl] = useState<string | null>(null)
   const [confirmKick, setConfirmKick] = useState<string | null>(null)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -29,7 +30,10 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
 
   useEffect(() => {
     apiRoomInfo(view.code)
-      .then((i) => setLanUrls(i.lanUrls))
+      .then((i) => {
+        setLanUrls(i.lanUrls)
+        setPublicUrl(i.publicUrl ?? null)
+      })
       .catch(() => {})
   }, [view.code])
 
@@ -51,14 +55,19 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
     }
   }
 
-  const inviteUrl = `${lanUrls[0] ?? (typeof location !== 'undefined' ? location.origin : '')}/room/${view.code}`
+  // Prefer an address that works from anywhere: the page's own origin when it was opened through the
+  // tunnel, else the tunnel's public URL, else the LAN address. The LAN link stays as an alternative.
+  const origin = typeof location !== 'undefined' ? location.origin : ''
+  const viaTunnel = typeof location !== 'undefined' && location.protocol === 'https:' && !isLocalHost(location.hostname)
+  const inviteBase = viaTunnel ? origin : (publicUrl ?? lanUrls[0] ?? origin)
+  const inviteUrl = `${inviteBase}/room/${view.code}`
+  const lanInvite = lanUrls[0] && lanUrls[0] !== inviteBase ? `${lanUrls[0]}/room/${view.code}` : null
 
   // QR of the invite link for phones at the table. Client-only (lazy import, after mount) so SSR
   // never renders it; skipped for localhost links, which another device couldn't open anyway.
   const [qrSrc, setQrSrc] = useState<string | null>(null)
   useEffect(() => {
-    const host = new URL(inviteUrl, location.href).hostname
-    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return setQrSrc(null)
+    if (isLocalHost(new URL(inviteUrl, location.href).hostname)) return setQrSrc(null)
     let cancelled = false
     import('qrcode')
       .then((QR) => QR.toString(inviteUrl, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' }))
@@ -97,12 +106,18 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
           </button>
         </div>
       </div>
-      {(lanUrls.length > 0 || qrSrc) && (
+      {(lanUrls.length > 0 || publicUrl || qrSrc) && (
         <div className="share">
           {qrSrc && <img className="share-qr" src={qrSrc} width={112} height={112} alt={`QR code for ${inviteUrl}`} />}
           <p className="share-hint">
             {qrSrc ? 'Scan with a phone, or open ' : 'Friends on your network can open '}
             <code>{inviteUrl}</code>
+            {lanInvite && (
+              <>
+                {' '}
+                · on the same Wi-Fi: <code>{lanInvite}</code>
+              </>
+            )}
             {copied === 'failed' && <span className="error-text"> — copy blocked by the browser, select it manually.</span>}
           </p>
         </div>
@@ -239,4 +254,8 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
       </p>
     </section>
   )
+}
+
+function isLocalHost(host: string): boolean {
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]'
 }

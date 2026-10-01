@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameAction } from '~/game/types'
-import type { OpResult, RoomInfo, RoomOp, RoomView } from './protocol'
-import { HEARTBEAT_MS, SSE_PING_MS } from './protocol'
+import type { ClientMessage, OpResult, RoomInfo, RoomOp, RoomView, ServerMessage } from './protocol'
+import { PING_MS, WS_PATH } from './protocol'
 
 // ---------- Session storage (per browser tab, so several tabs = several players) ----------
 
@@ -39,23 +39,24 @@ export function saveName(name: string) {
 
 // ---------- HTTP ----------
 
+async function errorOf(res: Response, fallback: string): Promise<string> {
+  try {
+    return (await res.json()).error ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
 export async function apiCreateRoom(): Promise<string> {
   const res = await fetch('/api/rooms', { method: 'POST' })
-  if (!res.ok) throw new Error('Could not create room')
+  if (!res.ok) throw new Error(await errorOf(res, 'Could not create a game. Is the server running?'))
   return (await res.json()).code
 }
 
 export async function apiRoomInfo(code: string): Promise<RoomInfo> {
   const res = await fetch(`/api/rooms/${encodeURIComponent(code)}`)
+  if (!res.ok) throw new Error(await errorOf(res, 'Could not reach the server'))
   return res.json()
-}
-
-function timeoutSignal(ms: number): AbortSignal | undefined {
-  if (typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal) return AbortSignal.timeout(ms)
-  if (typeof AbortController === 'undefined') return undefined // very old browsers: no timeout
-  const ctrl = new AbortController()
-  setTimeout(() => ctrl.abort(), ms)
-  return ctrl.signal
 }
 
 /** Clipboard write that also works on plain-http LAN addresses (no async clipboard API there). */
@@ -82,33 +83,43 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export async function apiOp(code: string, op: RoomOp): Promise<OpResult> {
-  try {
-    const res = await fetch(`/api/rooms/${encodeURIComponent(code)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(op),
-      signal: timeoutSignal(10_000), // never leave the UI stuck on a hung request
-    })
-    return await res.json()
-  } catch {
-    return { ok: false, error: 'Connection to server lost' }
-  }
-}
-
-// ---------- Live room subscription ----------
+// ---------- Live room socket ----------
 
 export type ConnState = 'connecting' | 'open' | 'reconnecting' | 'missing'
+
+const REQUEST_TIMEOUT_MS = 10_000 // never leave the UI stuck on a lost reply
+const LOST: OpResult = { ok: false, error: 'Connection to server lost' }
+
+function socketUrl(code: string, token: string | undefined): string {
+  // wss:// behind the https tunnel, ws:// on the LAN; always the page's own origin.
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const qs = new URLSearchParams({ code })
+  if (token) qs.set('token', token)
+  return `${proto}//${location.host}${WS_PATH}?${qs}`
+}
+
+/** Reconnect delay: 0.5s, 1s, 2s… capped at 10s, with jitter so a room doesn't reconnect in lockstep. */
+const backoff = (attempt: number) => Math.min(10_000, 500 * 2 ** attempt) * (0.75 + Math.random() * 0.5)
+
+interface Pending {
+  resolve: (r: OpResult) => void
+  timer: ReturnType<typeof setTimeout>
+}
 
 export function useRoom(code: string) {
   const [session, setSession] = useState<Session | null>(null)
   const [ready, setReady] = useState(false)
   const [view, setView] = useState<RoomView | null>(null)
   const [conn, setConn] = useState<ConnState>('connecting')
+  const [connError, setConnError] = useState('')
   const [retry, setRetry] = useState(0)
   const [removed, setRemoved] = useState(false)
   const sessionRef = useRef<Session | null>(null)
   sessionRef.current = session
+  const socketRef = useRef<WebSocket | null>(null)
+  const pending = useRef(new Map<number, Pending>())
+  const nextId = useRef(1)
+  const attempts = useRef(0)
 
   // Session lives in sessionStorage, which only exists in the browser.
   useEffect(() => {
@@ -116,21 +127,46 @@ export function useRoom(code: string) {
     setReady(true)
   }, [code])
 
+  // One socket per tab. It doesn't depend on `session`: after a join the server rebinds this socket
+  // to the new seat, so joining costs no reconnect. A reconnect sends whatever token we hold then.
   useEffect(() => {
     if (!ready) return
-    const qs = session ? `?token=${encodeURIComponent(session.token)}` : ''
-    const es = new EventSource(`/api/rooms/${encodeURIComponent(code)}/events${qs}`)
-    setConn('connecting')
+    const ws = new WebSocket(socketUrl(code, sessionRef.current?.token))
+    socketRef.current = ws
+    setConn((c) => (c === 'open' || c === 'reconnecting' ? 'reconnecting' : 'connecting'))
+    let gone = false // missing room: stay closed for good
+    let done = false // this effect run has handed over (reconnect scheduled or cleanup)
     let retryTimer: ReturnType<typeof setTimeout> | undefined
-    // Watchdog: a half-open stream (Wi-Fi blip, sleep) may never error, so reconnect after prolonged silence.
-    let lastEvent = Date.now()
-    const touch = () => (lastEvent = Date.now())
-    const checkSilence = () => {
-      if (es.readyState === EventSource.CLOSED) return // missing, or the retry timer below already owns it
-      if (Date.now() - lastEvent < SSE_PING_MS * 3) return
-      es.close()
+    let lastMessage = Date.now()
+
+    const failPending = () => {
+      for (const p of pending.current.values()) {
+        clearTimeout(p.timer)
+        p.resolve(LOST)
+      }
+      pending.current.clear()
+    }
+    const reconnect = (delay: number) => {
+      if (done || gone) return
+      done = true
+      failPending()
       setConn('reconnecting')
-      setRetry((n) => n + 1)
+      retryTimer = setTimeout(() => setRetry((n) => n + 1), delay)
+    }
+    const drop = () => {
+      // Detach first: closing a half-open socket can take a long time to report.
+      ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null
+      try {
+        ws.close()
+      } catch {}
+    }
+    // Watchdog: a half-open socket (Wi-Fi blip, sleep) may never close, so reconnect after prolonged silence.
+    const checkSilence = () => {
+      if (done || gone) return
+      if (ws.readyState === WebSocket.OPEN && Date.now() - lastMessage < PING_MS * 3) return
+      if (ws.readyState === WebSocket.CONNECTING && Date.now() - lastMessage < REQUEST_TIMEOUT_MS) return
+      drop()
+      reconnect(0)
     }
     const watchdog = setInterval(checkSilence, 5000)
     const onVisible = () => {
@@ -138,79 +174,109 @@ export function useRoom(code: string) {
     }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('online', checkSilence)
-    es.addEventListener('ping', touch)
-    es.onopen = () => {
-      touch()
-      setConn('open')
+
+    const send = (msg: ClientMessage) => ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(msg))
+    ws.onopen = () => {
+      lastMessage = Date.now()
     }
-    es.onmessage = (e) => {
-      touch()
-      const v: RoomView = JSON.parse(e.data)
-      setView(v)
-      setConn('open')
-      // Server no longer recognises us (kicked / left / server restarted): drop stale session.
-      if (session && v.youId === null) {
-        clearSession(code)
-        setSession(null)
-        setRemoved(true)
+    ws.onmessage = (e) => {
+      lastMessage = Date.now()
+      let msg: ServerMessage
+      try {
+        msg = JSON.parse(e.data)
+      } catch {
+        return
+      }
+      switch (msg.type) {
+        case 'view': {
+          const v = msg.view
+          attempts.current = 0
+          setView(v)
+          setConn('open')
+          setConnError('')
+          // Server no longer recognises us (kicked / left / server restarted): drop stale session.
+          if (sessionRef.current && v.youId === null) {
+            clearSession(code)
+            setSession(null)
+            setRemoved(true)
+          }
+          break
+        }
+        case 'result': {
+          const p = pending.current.get(msg.id)
+          if (!p) break
+          pending.current.delete(msg.id)
+          clearTimeout(p.timer)
+          p.resolve(msg.result)
+          break
+        }
+        case 'ping':
+          send({ type: 'pong' })
+          break
+        case 'missing':
+          gone = true
+          clearSession(code)
+          failPending()
+          setConn('missing')
+          break
+        case 'error':
+          setConnError(msg.error) // e.g. rate limited; the server closes and we retry with backoff
+          break
       }
     }
-    es.addEventListener('missing', () => {
-      es.close()
-      clearSession(code)
-      setConn('missing')
-    })
-    es.onerror = () => {
-      setConn((c) => (c === 'missing' ? c : 'reconnecting'))
-      // The browser gives up for good on non-SSE responses (e.g. a 500): retry ourselves.
-      if (es.readyState === EventSource.CLOSED) retryTimer = setTimeout(() => setRetry((n) => n + 1), 2000)
-    }
+    ws.onclose = () => reconnect(backoff(attempts.current++))
+    ws.onerror = () => {} // 'close' follows
+
     return () => {
+      done = true
       clearTimeout(retryTimer)
       clearInterval(watchdog)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('online', checkSilence)
-      es.close()
+      drop()
+      failPending()
+      if (socketRef.current === ws) socketRef.current = null
     }
-  }, [code, ready, session, retry])
+  }, [code, ready, retry])
 
-  // Heartbeat so the server notices a device that dropped off the network without closing the stream.
-  useEffect(() => {
-    if (!session) return
-    const beat = () => void apiOp(code, { op: 'heartbeat', token: session.token })
-    const timer = setInterval(beat, HEARTBEAT_MS)
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') beat()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [code, session])
+  /** Send an op over the socket and wait for its reply. */
+  const request = useCallback((op: RoomOp): Promise<OpResult> => {
+    const ws = socketRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return Promise.resolve({ ok: false, error: 'Not connected — reconnecting…' })
+    const id = nextId.current++
+    return new Promise<OpResult>((resolve) => {
+      const timer = setTimeout(() => {
+        pending.current.delete(id)
+        resolve(LOST)
+      }, REQUEST_TIMEOUT_MS)
+      pending.current.set(id, { resolve, timer })
+      ws.send(JSON.stringify({ type: 'op', id, op } satisfies ClientMessage))
+    })
+  }, [])
 
   const join = useCallback(
     async (name: string) => {
-      const r = await apiOp(code, { op: 'join', name, token: sessionRef.current?.token })
+      const r = await request({ op: 'join', name, token: sessionRef.current?.token })
       if (r.ok && r.token && r.playerId) {
         const s = { token: r.token, playerId: r.playerId }
         saveSession(code, s)
         saveName(name)
         setRemoved(false)
+        sessionRef.current = s // before any further view arrives, so it isn't mistaken for a removal
         setSession(s)
       }
       return r
     },
-    [code],
+    [code, request],
   )
 
   const op = useCallback(
     async (fn: (token: string) => RoomOp): Promise<OpResult> => {
       const s = sessionRef.current
       if (!s) return { ok: false, error: 'Not joined' }
-      return apiOp(code, fn(s.token))
+      return request(fn(s.token))
     },
-    [code],
+    [request],
   )
 
   const leave = useCallback(async () => {
@@ -226,5 +292,5 @@ export function useRoom(code: string) {
 
   const clearRemoved = useCallback(() => setRemoved(false), [])
 
-  return { ready, session, view, conn, join, op, leave, act, removed, clearRemoved }
+  return { ready, session, view, conn, connError, join, op, leave, act, removed, clearRemoved }
 }

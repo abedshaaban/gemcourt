@@ -1,54 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { performOp, roomInfo } from '~/server/rooms'
+import { TOO_MANY, limits, requestAddress } from '~/server/limits'
+import { roomExists, roomInfo } from '~/server/rooms'
 
-const MAX_BODY_BYTES = 16 * 1024
-
-/** Read a JSON body without ever buffering more than MAX_BODY_BYTES. */
-async function readJson(request: Request): Promise<{ ok: true; value: unknown } | { ok: false; status: number }> {
-  const declared = Number(request.headers.get('content-length') ?? 0)
-  if (declared > MAX_BODY_BYTES) return { ok: false, status: 413 }
-  const reader = request.body?.getReader()
-  if (!reader) return { ok: false, status: 400 }
-  const chunks: Uint8Array[] = []
-  let size = 0
-  for (;;) {
-    let chunk: ReadableStreamReadResult<Uint8Array>
-    try {
-      chunk = await reader.read()
-    } catch {
-      return { ok: false, status: 400 } // client aborted mid-body
-    }
-    const { value, done } = chunk
-    if (done) break
-    size += value.byteLength
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel()
-      return { ok: false, status: 413 }
-    }
-    chunks.push(value)
-  }
-  try {
-    return { ok: true, value: JSON.parse(Buffer.concat(chunks).toString('utf8')) }
-  } catch {
-    return { ok: false, status: 400 }
-  }
-}
-
+// Room lookup for the home page and the waiting room's invite links. Everything live (joining,
+// moves, room updates) goes over the WebSocket (src/server/socket.ts).
 export const Route = createFileRoute('/api/rooms/$code')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
+        // Guessing codes: unknown codes use up the join budget; once it's gone every lookup is refused.
+        const addr = requestAddress(request)
+        if (!addr.local) {
+          if (!limits.join.allowed(addr.ip)) return Response.json({ error: TOO_MANY }, { status: 429 })
+          if (!roomExists(params.code)) limits.join.take(addr.ip)
+        }
         const port = new URL(request.url).port || '3000'
         return Response.json(roomInfo(params.code, port))
-      },
-      POST: async ({ request, params }) => {
-        const body = await readJson(request)
-        if (!body.ok) {
-          const error = body.status === 413 ? 'Request too large' : 'Invalid request'
-          return Response.json({ ok: false, error }, { status: body.status })
-        }
-        // Rule rejections ("not your turn", "name taken"…) are normal answers, not HTTP errors.
-        return Response.json(performOp(params.code, body.value))
       },
     },
   },
