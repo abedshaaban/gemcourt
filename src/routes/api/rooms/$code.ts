@@ -12,7 +12,13 @@ async function readJson(request: Request): Promise<{ ok: true; value: unknown } 
   const chunks: Uint8Array[] = []
   let size = 0
   for (;;) {
-    const { value, done } = await reader.read()
+    let chunk: ReadableStreamReadResult<Uint8Array>
+    try {
+      chunk = await reader.read()
+    } catch {
+      return { ok: false, status: 400 } // client aborted mid-body
+    }
+    const { value, done } = chunk
     if (done) break
     size += value.byteLength
     if (size > MAX_BODY_BYTES) {
