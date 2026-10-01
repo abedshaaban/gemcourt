@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
+import { LogText } from './LogText'
 import { avatarColor } from './ui'
 
 export function GameLog({
@@ -13,6 +14,7 @@ export function GameLog({
 }) {
   const listRef = useRef<HTMLOListElement>(null)
   const lastId = log.length ? log[log.length - 1].id : -1
+  const names = players.map((p) => p.name)
 
   useEffect(() => {
     const el = listRef.current
@@ -35,7 +37,9 @@ export function GameLog({
                 style={{ background: idx >= 0 ? avatarColor(idx) : 'var(--accent)' }}
                 aria-hidden="true"
               />
-              <span>{entry.message}</span>
+              <span>
+                <LogText message={entry.message} names={names} />
+              </span>
             </li>
           )
         })}

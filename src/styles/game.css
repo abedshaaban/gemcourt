@@ -1289,6 +1289,31 @@
   flex-shrink: 0;
   transform: translateY(-1px);
 }
+/* gem words in log lines, drawn as tiny tokens */
+.sp-logchip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  margin: 0 2px;
+  border-radius: 999px;
+  vertical-align: -3px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.4), transparent 55%),
+    var(--c);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.sp-logchip__n {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sp-logchip__gem {
+  font-size: 10px;
+}
 .sp-log__empty {
   font-family: var(--font-serif);
   font-style: italic;
