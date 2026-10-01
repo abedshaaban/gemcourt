@@ -43,8 +43,9 @@ const MAX_ROOMS = 500
 export const AWAY_GRACE_MS = 5000
 /** How long the current player must be gone before anyone may skip their turn (matches the client's button). */
 export const SKIP_GRACE_MS = 8000
-/** A member whose streams look open but who sent no heartbeat for this long counts as offline (half-open TCP). */
-const LIVENESS_MS = 30_000
+/** A member whose streams look open but who sent no heartbeat for this long counts as offline (half-open TCP).
+ *  Must exceed Chrome's intensive throttling of hidden tabs (timers run ~once a minute), or background tabs flicker offline. */
+const LIVENESS_MS = 90_000
 
 // Keep state on globalThis so Vite's dev-server module reloads don't wipe running games.
 const store = ((globalThis as any).__splendorRooms ??= new Map<string, Room>()) as Map<string, Room>

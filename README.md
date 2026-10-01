@@ -50,7 +50,7 @@ Tip: to test alone, open several browser tabs — each tab is a separate player.
 - If the host has been offline for a few seconds, any other player can start / restart the game and becomes host.
 - The host can't start while a seated player is offline (remove them or wait).
 - A device that drops off the network without closing the page (e.g. a phone leaving Wi-Fi) shows as
-  offline after ~30 seconds without a heartbeat, and comes back online as soon as it reconnects.
+  offline after a minute or two (~90 seconds) without a heartbeat, and comes back online as soon as it reconnects.
 - Seats are protected only by name: this is meant for friends on a trusted home network.
 
 ## Scripts
