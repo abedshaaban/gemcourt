@@ -1872,6 +1872,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: max-content; /* centered with left: 50%, so don't shrink to half the viewport */
   max-width: min(560px, calc(100vw - 32px));
   padding: 10px 10px 10px 14px;
   border-radius: 12px;
