@@ -408,8 +408,9 @@ export function GameBoard({
             <span className="sp-ellipsis">
               <strong>Final round</strong> —{' '}
               {finalTrigger
-                ? `${me && finalTrigger.name === me.name ? 'You' : finalTrigger.name} reached ${finalTrigger.points} prestige`
-                : 'a merchant reached 15 prestige'}
+                ? `${me && finalTrigger.name === me.name ? 'You' : finalTrigger.name} reached ${finalTrigger.points}`
+                : 'a merchant reached 15'}
+              <span className="sp-final__pts"> prestige</span>
               {' · '}
               {turnsLeft.length === 1 ? 'last turn' : `${turnsLeft.length} turns left`}
               <span className="sp-final__who">
