@@ -336,9 +336,9 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       return { ok: true }
     }
     case 'playAgain': {
+      if (room.status === 'lobby') return { ok: true } // someone already did
       const err = hostError(room, me, 'restart')
       if (err) return { ok: false, error: err }
-      if (room.status === 'lobby') return { ok: true } // someone already did
       if (room.game && room.game.status !== 'finished') return { ok: false, error: 'The game is still in progress' }
       takeHost(room, me)
       room.status = 'lobby'
