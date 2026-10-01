@@ -7,6 +7,9 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
+// Room codes are 5 letters (CODE_LENGTH / CODE_ALPHABET in server/rooms.ts — no digits).
+const CODE_LENGTH = 5
+
 function HomePage() {
   const navigate = useNavigate()
   const [code, setCode] = useState('')
@@ -62,14 +65,19 @@ function HomePage() {
         <form className="stack" onSubmit={join}>
           <input
             className="input input-code"
-            placeholder="CODE"
+            placeholder="5-letter code"
+            aria-label="Game code"
             value={code}
-            maxLength={8}
+            maxLength={CODE_LENGTH}
             autoComplete="off"
+            autoCapitalize="characters"
             spellCheck={false}
-            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))
+              setError('')
+            }}
           />
-          <button className="btn" type="submit" disabled={busy !== null}>
+          <button className="btn" type="submit" disabled={busy !== null || code.length !== CODE_LENGTH}>
             {busy === 'join' ? 'Joining…' : 'Join game'}
           </button>
         </form>

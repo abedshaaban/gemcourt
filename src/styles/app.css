@@ -159,6 +159,13 @@ a {
   text-transform: uppercase;
   text-align: center;
 }
+.input-code::placeholder {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-faint);
+}
 
 .error-text {
   color: var(--danger);
