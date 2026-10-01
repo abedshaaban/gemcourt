@@ -36,8 +36,10 @@ const CODE_LENGTH = 5
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000 // idle rooms with nobody connected are dropped after 3h
 const EMPTY_ROOM_TTL_MS = 15 * 60 * 1000 // rooms nobody ever joined go sooner
 const MAX_ROOMS = 500
-/** How long someone must be gone before others may take over for them (host rights, skip, seat reclaim). */
+/** How long someone must be gone before others may take over for them (host rights, seat reclaim). */
 export const AWAY_GRACE_MS = 5000
+/** How long the current player must be gone before anyone may skip their turn (matches the client's button). */
+export const SKIP_GRACE_MS = 8000
 
 // Keep state on globalThis so Vite's dev-server module reloads don't wipe running games.
 const store = ((globalThis as any).__splendorRooms ??= new Map<string, Room>()) as Map<string, Room>
@@ -169,9 +171,9 @@ function removeMember(room: Room, memberId: string) {
   if (room.hostId === memberId) room.hostId = (room.members.find((m) => m.connections > 0) ?? room.members[0])?.id ?? null
 }
 
-function awayLongEnough(m: Member | undefined, now = Date.now()): boolean {
+function awayLongEnough(m: Member | undefined, grace = AWAY_GRACE_MS, now = Date.now()): boolean {
   // `?? 0`: members created before a dev hot-reload may lack the field; treat them as long gone.
-  return !m || (m.connections === 0 && now - (m.offlineSince ?? 0) >= AWAY_GRACE_MS)
+  return !m || (m.connections === 0 && now - (m.offlineSince ?? 0) >= grace)
 }
 
 /**
@@ -323,7 +325,7 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       const current = room.game.players[room.game.currentPlayerIndex]
       const member = room.members.find((m) => m.id === current.id)
       if (member && member.connections > 0) return { ok: false, error: `${current.name} is back online` }
-      if (!awayLongEnough(member)) return { ok: false, error: `Give ${current.name} a few seconds to reconnect` }
+      if (!awayLongEnough(member, SKIP_GRACE_MS)) return { ok: false, error: `Give ${current.name} a few seconds to reconnect` }
       room.game = skipTurn(room.game)
       broadcast(room)
       return { ok: true }
