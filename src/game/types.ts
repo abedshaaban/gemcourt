@@ -14,7 +14,7 @@ export const MAX_TOKENS = 10
 export const MAX_RESERVED = 3
 export const MARKET_SLOTS = 4
 export const MIN_PLAYERS = 2
-export const MAX_PLAYERS = 4
+export const MAX_PLAYERS = 6
 
 export type GemCounts = Record<GemColor, number>
 export type TokenCounts = Record<TokenColor, number>

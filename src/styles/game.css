@@ -2473,7 +2473,8 @@
 @media (min-width: 1241px) {
   .sp-table {
     --chrome-h: 384px;
-    --card-w: clamp(56px, min(calc((min(100vw, 1560px) - 552px) / 7.6), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
+    --table-cards: 7.6;
+    --card-w: clamp(56px, min(calc((min(100vw, 1560px) - 552px) / var(--table-cards)), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
     display: grid;
     grid-template-columns: auto auto;
     justify-content: center;
@@ -2495,7 +2496,18 @@
     border-bottom: 0;
     border-right: 1px solid rgba(217, 169, 59, 0.14);
   }
+  /* 6–7 nobles: two columns of four rows still fit the market's height; ~0.9 card widths wider. */
+  .sp-table.sp-table--many-nobles {
+    --table-cards: 8.5;
+  }
+  .sp-table--many-nobles > .sp-nobles {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    align-content: start;
+    justify-items: center;
+  }
   .sp-table > .sp-nobles .sp-none {
+    grid-column: 1 / -1;
     max-width: var(--card-w);
     text-align: center;
     font-size: 13px;
@@ -2536,7 +2548,7 @@
   }
   @media (min-width: 1241px) {
     .sp-table {
-      --card-w: clamp(56px, min(calc((100cqi - 84px) / 7.6), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
+      --card-w: clamp(56px, min(calc((100cqi - 84px) / var(--table-cards)), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
     }
   }
   @media (max-width: 760px) {

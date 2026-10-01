@@ -22,7 +22,7 @@ export function QuickRules() {
     <details className="rules-box">
       <summary>How to play</summary>
       <ul>
-        <li>2–4 players. On your turn do exactly one action:</li>
+        <li>2–6 players. On your turn do exactly one action:</li>
         <li>
           <b>Take 3 gems</b> of different colors, or <b>take 2 gems</b> of the same color (only if that pile has 4+).
         </li>

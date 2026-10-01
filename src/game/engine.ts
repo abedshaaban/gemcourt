@@ -44,9 +44,14 @@ export function shuffle<T>(arr: T[], rng: () => number): T[] {
   return arr
 }
 
-/** Number of tokens of each gem color in the bank at setup. */
+/** Number of tokens of each gem color in the bank at setup (5–6 players extend the official 2–4 table). */
 export function gemsPerPile(playerCount: number): number {
-  return playerCount === 2 ? 4 : playerCount === 3 ? 5 : 7
+  return ({ 2: 4, 3: 5, 4: 7, 5: 8, 6: 9 } as Record<number, number>)[playerCount] ?? 7
+}
+
+/** Gold jokers in the bank at setup: 5 up to 4 players, then one more per extra player. */
+export function goldPerGame(playerCount: number): number {
+  return playerCount <= 4 ? 5 : playerCount + 1
 }
 
 function addLog(state: GameState, playerId: string | null, message: string): void {
@@ -119,7 +124,7 @@ export function createGame(players: { id: string; name: string }[], rng: () => n
   const perPile = gemsPerPile(players.length)
   const bank = emptyTokens()
   for (const c of GEM_COLORS) bank[c] = perPile
-  bank.gold = 5
+  bank.gold = goldPerGame(players.length)
 
   const state: GameState = {
     players: players.map((p) => ({
