@@ -166,7 +166,7 @@ export function YourArea({
                 affordable={playing && canAfford(player.tokens, player.bonuses, r.cost)}
                 onClick={canAct ? () => onReservedClick(r) : undefined}
                 disabled={pending}
-                className={r.blind ? 'is-blind' : undefined}
+                blind={r.blind}
               />
             ),
           )}

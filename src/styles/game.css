@@ -599,20 +599,21 @@
     0 0 24px 4px rgba(240, 198, 90, 0.4),
     0 10px 22px rgba(0, 0, 0, 0.55);
 }
-.sp-card.is-blind::before {
-  content: 'Blind';
+/* Blind tag sits in the bottom-right corner, clear of the cost column on the left. */
+.sp-card__blind {
   position: absolute;
   z-index: 2;
-  left: 50%;
-  top: 30%;
-  transform: translateX(-50%);
-  padding: 1px 6px;
+  right: 6%;
+  bottom: 17%;
+  padding: 1px 4px;
   border-radius: 999px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  font-size: 8px;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   color: var(--text-muted);
+  pointer-events: none;
 }
 
 /* ---------- card backs & deck piles ---------- */

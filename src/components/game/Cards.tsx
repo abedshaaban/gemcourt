@@ -43,6 +43,7 @@ export function DevCard({
   card,
   size = 'md',
   affordable,
+  blind,
   deal,
   onClick,
   disabled,
@@ -52,6 +53,8 @@ export function DevCard({
   card: Card
   size?: CardSize
   affordable?: boolean
+  /** reserved face-down from a deck (only its owner sees the face) */
+  blind?: boolean
   /** play the "dealt" entrance animation (on mount) */
   deal?: boolean
   className?: string
@@ -69,6 +72,7 @@ export function DevCard({
         `sp-tier-${card.tier}`,
         `sp-c-${card.bonus}`,
         affordable && 'is-affordable',
+        blind && 'is-blind',
         deal && 'sp-deal',
         className,
       )}
@@ -83,6 +87,11 @@ export function DevCard({
           <CostPip key={c} color={c} n={card.cost[c]} />
         ))}
       </span>
+      {blind && (
+        <span className="sp-card__blind" title="Reserved blind — hidden from your rivals">
+          Blind
+        </span>
+      )}
       <span className="sp-card__tier" aria-hidden="true">
         {ROMAN[card.tier]}
       </span>
