@@ -276,7 +276,16 @@ export function GameBoard({
   // ---------- derived ----------
   const opponents = state.players.map((p, i) => ({ p, i })).filter(({ p }) => p.id !== youId)
   const pendingNobles = state.nobles.filter((n) => state.pendingNobleIds.includes(n.id))
-  const lastPlayer = state.players[state.players.length - 1]
+  // Final round: who triggered it (from the engine's log line) and whose turns remain before the game ends.
+  const finalTrigger = useMemo(() => {
+    if (!state.finalRound) return null
+    for (let i = state.log.length - 1; i >= 0; i--) {
+      const m = /^(.+) reached (\d+) points\. Final round!$/.exec(state.log[i].message)
+      if (m && state.log[i].playerId === null) return { name: m[1], points: m[2] }
+    }
+    return null
+  }, [state.finalRound, state.log])
+  const turnsLeft = state.players.slice(state.currentPlayerIndex)
   // After the game ends turn is a multiple of the player count, so don't count a round that never started.
   const round = state.players.length
     ? Math.floor(Math.max(0, state.turn - (playing ? 0 : 1)) / state.players.length) + 1
@@ -376,17 +385,28 @@ export function GameBoard({
       </header>
 
       {state.finalRound && playing && (
-        <div className="sp-final" role="status">
-          <span className="sp-final__ornament" aria-hidden="true">
-            ✦
-          </span>
-          <span>
-            <strong>Final round</strong> — a merchant has reached 15 prestige. Play continues
-            {lastPlayer ? ` until ${lastPlayer.id === youId ? 'your' : `${lastPlayer.name}'s`} turn ends` : ' to the end of the round'}.
-          </span>
-          <span className="sp-final__ornament" aria-hidden="true">
-            ✦
-          </span>
+        // Zero-height slot: the banner floats over the gap below the top bar, so nothing shifts when it appears.
+        <div className="sp-final-slot">
+          <div className="sp-final" role="status">
+            <span className="sp-final__ornament" aria-hidden="true">
+              ✦
+            </span>
+            <span className="sp-ellipsis">
+              <strong>Final round</strong> —{' '}
+              {finalTrigger
+                ? `${me && finalTrigger.name === me.name ? 'You' : finalTrigger.name} reached ${finalTrigger.points} prestige`
+                : 'a merchant reached 15 prestige'}
+              {' · '}
+              {turnsLeft.length === 1 ? 'last turn' : `${turnsLeft.length} turns left`}
+              <span className="sp-final__who">
+                {': '}
+                {turnsLeft.map((p) => (p.id === youId ? 'you' : p.name)).join(', then ')}
+              </span>
+            </span>
+            <span className="sp-final__ornament" aria-hidden="true">
+              ✦
+            </span>
+          </div>
         </div>
       )}
 

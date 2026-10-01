@@ -227,21 +227,35 @@
   display: block;
 }
 
+.sp-final-slot {
+  position: relative;
+  z-index: 15; /* above the board, below the sticky top bar */
+  height: 0;
+  margin-bottom: -14px; /* cancel the flex gap this slot adds */
+}
 .sp-final {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 9px 16px;
-  border-radius: var(--radius);
-  border: 1px solid rgba(226, 90, 90, 0.45);
+  gap: 12px;
+  max-width: calc(100% - 24px);
+  padding: 3px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 90, 90, 0.55);
   background:
     linear-gradient(90deg, transparent, rgba(226, 90, 90, 0.16), transparent),
     var(--surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   font-family: var(--font-serif);
-  font-size: 17px;
-  text-align: center;
+  font-size: 15px;
+  line-height: 1.35;
+  white-space: nowrap;
   color: var(--text);
+  animation: sp-fade 0.3s ease-out both;
 }
 .sp-final strong {
   font-family: var(--font-display);
@@ -2010,6 +2024,14 @@
     margin: 0 -12px;
     padding: 10px 12px;
     grid-template-columns: 1fr auto;
+  }
+  .sp-final__who,
+  .sp-final__ornament {
+    display: none;
+  }
+  .sp-final {
+    font-size: 14px;
+    padding: 3px 12px;
   }
   .sp-turnbox {
     grid-column: 1 / -1;
