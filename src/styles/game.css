@@ -1250,6 +1250,9 @@
 .sp-opp__turn::first-letter {
   text-transform: uppercase;
 }
+.sp-opp__turn.is-away {
+  color: var(--text-muted); /* offline: not actually taking a turn */
+}
 .sp-online {
   width: 8px;
   height: 8px;
@@ -2110,6 +2113,19 @@
   }
   .sp-turn {
     max-width: 100%;
+  }
+  /* the offline countdown needs the room: give it its own line under "Waiting for …" */
+  .sp-turn.is-away {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0;
+    border-radius: 18px;
+    padding: 5px 16px;
+  }
+  .sp-turn.is-away .sp-turn__sub {
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 14px;
   }
   .sp-lastmove {
     max-width: 100%;

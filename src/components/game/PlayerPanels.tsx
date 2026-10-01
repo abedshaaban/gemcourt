@@ -44,6 +44,7 @@ export function OpponentPanel({
   online,
   isTurn,
   phase,
+  statusOverride,
   flash,
   onReservedClick,
 }: {
@@ -52,13 +53,14 @@ export function OpponentPanel({
   online: boolean
   isTurn: boolean
   phase: TurnPhase
+  statusOverride?: string // replaces the turn status while it's this rival's turn (e.g. offline countdown)
   flash?: boolean // just made a move: highlight briefly
   onReservedClick?: (card: ReservedCard) => void // look-only view of a visible reserved card
 }) {
   // Phones show a one-line summary that expands on tap; wider layouts hide the toggle and always show everything.
   const [open, setOpen] = useState(false)
   const bodyId = useId()
-  const status = phase === 'action' ? 'Taking a turn…' : phaseVerb(phase).replace(/^is /, '')
+  const status = statusOverride ?? (phase === 'action' ? 'Taking a turn…' : phaseVerb(phase).replace(/^is /, ''))
   return (
     <article
       className={cx('sp-opp', isTurn && 'is-turn', flash && 'is-flash', open && 'is-open')}
@@ -76,7 +78,7 @@ export function OpponentPanel({
           <span className="sp-opp__name">
             <span className="sp-ellipsis">{player.name}</span>
             <OnlineDot online={online} />
-            {isTurn && <span className="sp-opp__turn sp-ellipsis">{status}</span>}
+            {isTurn && <span className={cx('sp-opp__turn sp-ellipsis', statusOverride && 'is-away')}>{status}</span>}
           </span>
           <span className="sp-opp__meta sp-opp__stats">
             {player.cards.length} card{player.cards.length === 1 ? '' : 's'} · {player.tokenCount}/{MAX_TOKENS} tokens ·{' '}
@@ -96,7 +98,7 @@ export function OpponentPanel({
             </div>
             <div className="sp-opp__meta">
               {isTurn ? (
-                <span className="sp-opp__turn">{status}</span>
+                <span className={cx('sp-opp__turn', statusOverride && 'is-away')}>{status}</span>
               ) : (
                 <>
                   {player.cards.length} card{player.cards.length === 1 ? '' : 's'} · {player.tokenCount}/{MAX_TOKENS} tokens

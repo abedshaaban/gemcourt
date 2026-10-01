@@ -37,9 +37,10 @@ function RoomPage() {
   const [skipping, setSkipping] = useState(false)
   const currentId = view?.game ? view.game.players[view.game.currentPlayerIndex]?.id : undefined
   const currentOnline = view?.players.find((p) => p.id === currentId)?.connected ?? true
-  const awayLongEnough = useOfflineFor(currentId, !currentOnline, SKIP_GRACE_MS)
+  const currentAwayFor = useOfflineFor(currentId, !currentOnline, SKIP_GRACE_MS)
+  const awayLongEnough = currentAwayFor.elapsed
   const hostMember = view?.players.find((p) => p.isHost)
-  const hostAway = useOfflineFor(hostMember?.id, !!hostMember && !hostMember.connected, SKIP_GRACE_MS)
+  const hostAway = useOfflineFor(hostMember?.id, !!hostMember && !hostMember.connected, SKIP_GRACE_MS).elapsed
 
   const goHome = () => navigate({ to: '/' })
 
@@ -112,6 +113,7 @@ function RoomPage() {
           onPlayAgain={async () => report(await op((token) => ({ op: 'playAgain', token })))}
           onLeave={goHome}
           colorIndex={colorIndex}
+          currentSkipAt={view.game.status === 'playing' && current && connected[current.id] === false ? currentAwayFor.until : null}
         />
       </>
     )
@@ -158,24 +160,28 @@ function RoomPage() {
 
 const SKIP_GRACE_MS = 8000
 
-/** True once `active` has stayed true for `ms` for the same `key` (e.g. a player offline for 8s). */
-function useOfflineFor(key: string | undefined, active: boolean, ms: number): boolean {
+/** `elapsed` turns true once `active` has stayed true for `ms` for the same `key` (e.g. a player offline
+ *  for 8s); `until` is when that happens (epoch ms), or null while inactive — for a countdown. */
+function useOfflineFor(key: string | undefined, active: boolean, ms: number): { elapsed: boolean; until: number | null } {
   const [elapsed, setElapsed] = useState(false)
+  const [until, setUntil] = useState<number | null>(null)
   const since = useRef<{ key?: string; at: number } | null>(null)
   useEffect(() => {
     setElapsed(false)
     if (!active) {
       since.current = null
+      setUntil(null)
       return
     }
     const prev = since.current
     const start = prev && prev.key === key ? prev : { key, at: Date.now() }
     since.current = start
+    setUntil(start.at + ms)
     const left = ms - (Date.now() - start.at)
     const t = setTimeout(() => setElapsed(true), Math.max(0, left))
     return () => clearTimeout(t)
   }, [key, active, ms])
-  return active && elapsed
+  return { elapsed: active && elapsed, until: active ? until : null }
 }
 
 function RejoinForm({ onJoin }: { onJoin: (name: string) => Promise<{ ok: boolean; error?: string }> }) {

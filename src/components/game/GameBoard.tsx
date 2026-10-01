@@ -32,6 +32,7 @@ export interface GameBoardProps {
   onPlayAgain: () => void // host-only, shown on game-over screen
   onLeave: () => void
   colorIndex?: Record<string, number> // playerId -> stable avatar color index (join order)
+  currentSkipAt?: number | null // current player is offline: when their turn becomes skippable (epoch ms)
 }
 
 type Target =
@@ -43,6 +44,27 @@ const TIER_ORDER: Tier[] = [3, 2, 1]
 const FLASH_MS = 2000 // how long a rival's panel and a refilled market slot stay highlighted
 const PHONE_MQ = '(max-width: 760px)' // keep in sync with the phone breakpoint in game.css
 const USER_SCROLL_QUIET_MS = 1000 // don't auto-scroll if the user touched the scroll this recently
+
+/** "Offline — skip available in Ns", then "Offline — you can skip their turn" (members only; spectators can't skip).
+ *  Ticks once a second while counting down. Null when the current player isn't offline. */
+function useOfflineStatus(skipAt: number | null, canSkip: boolean): string | null {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (skipAt === null) return
+    setNow(Date.now())
+    if (Date.now() >= skipAt) return
+    const id = window.setInterval(() => {
+      const t = Date.now()
+      setNow(t)
+      if (t >= skipAt) window.clearInterval(id)
+    }, 250) // finer than 1s so the displayed second never lags
+    return () => window.clearInterval(id)
+  }, [skipAt])
+  if (skipAt === null) return null
+  if (!canSkip) return 'Offline'
+  const left = Math.ceil((skipAt - now) / 1000)
+  return left > 0 ? `Offline — skip available in ${left}s` : 'Offline — you can skip their turn'
+}
 
 /** Next token selection after clicking a bank pile, plus an optional explanatory hint. */
 function nextSelection(sel: GemColor[], color: GemColor, bank: TokenCounts): { sel: GemColor[]; hint?: string } {
@@ -70,6 +92,7 @@ export function GameBoard({
   onPlayAgain,
   onLeave,
   colorIndex,
+  currentSkipAt = null,
 }: GameBoardProps): JSX.Element {
   const meIndex = youId ? state.players.findIndex((p) => p.id === youId) : -1
   const me = meIndex >= 0 ? state.players[meIndex] : null
@@ -78,6 +101,7 @@ export function GameBoard({
   const isMyTurn = playing && !!me && current?.id === me.id
   const canAct = isMyTurn && state.phase === 'action'
   const { soundOn, toggleSound } = useTurnAlert(isMyTurn)
+  const offlineStatus = useOfflineStatus(playing && !isMyTurn ? currentSkipAt : null, !!me)
 
   const [selection, setSelectionState] = useState<GemColor[]>([])
   // mirror in a ref so rapid clicks never compute from a stale selection
@@ -364,7 +388,8 @@ export function GameBoard({
       state.phase === 'discard' ? 'Return tokens' : state.phase === 'chooseNoble' ? 'Choose a noble' : 'Take an action'
   } else if (current) {
     turnText = `Waiting for ${current.name}`
-    if (state.phase !== 'action') turnSub = `${current.name} ${phaseVerb(state.phase)}`
+    if (offlineStatus) turnSub = offlineStatus
+    else if (state.phase !== 'action') turnSub = `${current.name} ${phaseVerb(state.phase)}`
   } else turnText = 'Waiting…'
 
   return (
@@ -380,7 +405,7 @@ export function GameBoard({
         </div>
 
         <div className="sp-turnbox">
-          <div className={cx('sp-turn', isMyTurn && 'is-you', !playing && 'is-over')} aria-live="polite">
+          <div className={cx('sp-turn', isMyTurn && 'is-you', !playing && 'is-over', !!offlineStatus && 'is-away')} aria-live="polite">
             <span className="sp-turn__dot" aria-hidden="true" />
             <span className="sp-turn__text">{turnText}</span>
             {turnSub && <span className="sp-turn__sub">{turnSub}</span>}
@@ -572,6 +597,7 @@ export function GameBoard({
                   online={!!connected[p.id]}
                   isTurn={playing && i === state.currentPlayerIndex}
                   phase={state.phase}
+                  statusOverride={offlineStatus ?? undefined}
                   flash={flashPlayerId === p.id}
                   onReservedClick={me && playing ? (card) => setTarget({ kind: 'reserved', card, ownerId: p.id }) : undefined}
                 />
