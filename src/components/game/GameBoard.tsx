@@ -432,7 +432,7 @@ export function GameBoard({
               ))}
             </div>
           </section>
-          <GameLog log={state.log} players={state.players} />
+          <GameLog log={state.log} players={state.players} colorIndex={colorIndex} />
         </aside>
       </div>
 

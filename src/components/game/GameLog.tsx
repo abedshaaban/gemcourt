@@ -2,7 +2,15 @@ import { useEffect, useRef } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
 import { avatarColor } from './ui'
 
-export function GameLog({ log, players }: { log: LogEntry[]; players: PublicPlayer[] }) {
+export function GameLog({
+  log,
+  players,
+  colorIndex,
+}: {
+  log: LogEntry[]
+  players: PublicPlayer[]
+  colorIndex?: Record<string, number> // playerId -> stable avatar color index (join order)
+}) {
   const listRef = useRef<HTMLOListElement>(null)
   const lastId = log.length ? log[log.length - 1].id : -1
 
@@ -17,7 +25,9 @@ export function GameLog({ log, players }: { log: LogEntry[]; players: PublicPlay
       <ol className="sp-log__list" ref={listRef} aria-live="polite">
         {log.length === 0 && <li className="sp-log__empty">The game begins…</li>}
         {log.map((entry) => {
-          const idx = entry.playerId ? players.findIndex((p) => p.id === entry.playerId) : -1
+          const idx = entry.playerId
+            ? (colorIndex?.[entry.playerId] ?? players.findIndex((p) => p.id === entry.playerId))
+            : -1
           return (
             <li key={entry.id} className="sp-log__item">
               <span
