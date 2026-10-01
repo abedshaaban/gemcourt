@@ -196,6 +196,37 @@
   background: var(--accent);
 }
 
+/* turn pill + "what just happened" line */
+.sp-turnbox {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.sp-lastmove {
+  margin: 0;
+  min-width: 0;
+  max-width: 24vw;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.sp-lastmove__inner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  animation: sp-fade-up 0.3s ease-out both;
+}
+.sp-lastmove__mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sp-lastmove .sp-ellipsis {
+  display: block;
+}
+
 .sp-final {
   display: flex;
   align-items: center;
@@ -1128,6 +1159,16 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 1px rgba(217, 169, 59, 0.4), 0 0 22px rgba(217, 169, 59, 0.18), var(--shadow-sm);
 }
+/* just moved: a short glow that fades out */
+.sp-opp.is-flash {
+  animation: sp-flash 2s ease-out both;
+}
+@keyframes sp-flash {
+  0%, 35% {
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 2px var(--accent-strong), 0 0 28px rgba(240, 198, 90, 0.45), var(--shadow-sm);
+  }
+}
 .sp-opp__head {
   display: flex;
   align-items: center;
@@ -1831,6 +1872,20 @@
   display: inline-block;
   animation: sp-bump 0.4s ease-out;
 }
+/* market slot that was just refilled */
+.sp-card.sp-fresh {
+  animation: sp-deal 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both, sp-fresh 2s ease-out both;
+}
+@keyframes sp-fresh {
+  0%, 40% {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 3px;
+  }
+  100% {
+    outline: 2px solid transparent;
+    outline-offset: 3px;
+  }
+}
 
 @keyframes sp-deal {
   from {
@@ -1885,6 +1940,16 @@
   .sp-peek:hover {
     transform: scale(2.1);
   }
+  /* no glow animation: hold a static highlight for the same ~2s instead */
+  .sp-opp.is-flash {
+    animation: none !important;
+    border-color: var(--accent-strong);
+  }
+  .sp-card.sp-fresh {
+    animation: none !important;
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 3px;
+  }
 }
 
 /* ---------- responsive ---------- */
@@ -1938,10 +2003,18 @@
     padding: 10px 12px;
     grid-template-columns: 1fr auto;
   }
-  .sp-turn {
+  .sp-turnbox {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: center;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 100%;
+  }
+  .sp-turn {
+    max-width: 100%;
+  }
+  .sp-lastmove {
     max-width: 100%;
   }
   .sp-table {

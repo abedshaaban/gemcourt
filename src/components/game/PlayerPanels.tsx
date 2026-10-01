@@ -43,6 +43,7 @@ export function OpponentPanel({
   online,
   isTurn,
   phase,
+  flash,
   onReservedClick,
 }: {
   player: PublicPlayer
@@ -50,10 +51,11 @@ export function OpponentPanel({
   online: boolean
   isTurn: boolean
   phase: TurnPhase
+  flash?: boolean // just made a move: highlight briefly
   onReservedClick?: (card: ReservedCard) => void // look-only view of a visible reserved card
 }) {
   return (
-    <article className={cx('sp-opp', isTurn && 'is-turn')} aria-label={`${player.name}${isTurn ? ' (current turn)' : ''}`}>
+    <article className={cx('sp-opp', isTurn && 'is-turn', flash && 'is-flash')} aria-label={`${player.name}${isTurn ? ' (current turn)' : ''}`}>
       <header className="sp-opp__head">
         <Avatar name={player.name} index={index} />
         <div className="sp-opp__who">

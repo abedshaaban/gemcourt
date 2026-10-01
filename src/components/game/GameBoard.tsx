@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, JSX } from 'react'
 import { GEM_COLORS, MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
 import type {
@@ -17,9 +17,10 @@ import { Bank, SelectionTray } from './Bank'
 import { CardBack, DevCard, EmptySlot, NobleTile } from './Cards'
 import { GameLog } from './GameLog'
 import { GameOver } from './GameOver'
+import { LogText } from './LogText'
 import { OpponentPanel, YourArea } from './PlayerPanels'
 import { RulesPanel } from './RulesPanel'
-import { GEM_NAME, GEM_PLURAL, ROMAN, cx, phaseVerb } from './ui'
+import { GEM_NAME, GEM_PLURAL, ROMAN, avatarColor, cx, phaseVerb } from './ui'
 
 export interface GameBoardProps {
   state: PublicGameState
@@ -38,6 +39,7 @@ type Target =
   | { kind: 'reserved'; card: ReservedCard; ownerId?: string } // ownerId: a rival's visible reserved card
 
 const TIER_ORDER: Tier[] = [3, 2, 1]
+const FLASH_MS = 2000 // how long a rival's panel and a refilled market slot stay highlighted
 
 /** Next token selection after clicking a bank pile, plus an optional explanatory hint. */
 function nextSelection(sel: GemColor[], color: GemColor, bank: TokenCounts): { sel: GemColor[]; hint?: string } {
@@ -89,6 +91,47 @@ export function GameBoard({
   const [rulesOpen, setRulesOpen] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [resultsHidden, setResultsHidden] = useState(false)
+
+  // ---------- what just happened ----------
+  const lastLogId = state.log.length ? state.log[state.log.length - 1].id : 0
+  const lastRivalMove = useMemo(() => {
+    for (let i = state.log.length - 1; i >= 0; i--) {
+      const e = state.log[i]
+      if (e.playerId && e.playerId !== youId) return e
+    }
+    return null
+  }, [state.log, youId])
+  const [flashPlayerId, setFlashPlayerId] = useState<string | null>(null)
+  const [freshCardIds, setFreshCardIds] = useState<ReadonlySet<string>>(() => new Set())
+  const seenLogId = useRef<number | null>(null)
+  const seenMarket = useRef<Set<string> | null>(null)
+  const marketKey = TIER_ORDER.map((t) => state.market[t].map((c) => c?.id ?? '-').join(',')).join('|')
+
+  // Briefly highlight the rival who just acted.
+  useEffect(() => {
+    const prev = seenLogId.current
+    seenLogId.current = lastLogId
+    if (prev === null) return // first render: nothing "just happened"
+    const actor = [...state.log].reverse().find((e) => e.id > prev && e.playerId && e.playerId !== youId)
+    // (a re-run cancels the previous timer, so always settle the highlight here)
+    setFlashPlayerId(actor?.playerId ?? null)
+    if (!actor) return
+    const t = window.setTimeout(() => setFlashPlayerId(null), FLASH_MS)
+    return () => window.clearTimeout(t)
+  }, [lastLogId]) // keyed on the newest entry only
+
+  // Briefly highlight market slots that were just refilled.
+  useEffect(() => {
+    const ids = new Set(TIER_ORDER.flatMap((t) => state.market[t].flatMap((c) => (c ? [c.id] : []))))
+    const prev = seenMarket.current
+    seenMarket.current = ids
+    if (!prev) return
+    const fresh = new Set([...ids].filter((id) => !prev.has(id)))
+    setFreshCardIds(fresh)
+    if (fresh.size === 0) return
+    const t = window.setTimeout(() => setFreshCardIds(new Set()), FLASH_MS)
+    return () => window.clearTimeout(t)
+  }, [marketKey]) // marketKey captures the market contents
 
   // Reset transient UI whenever the turn or phase moves on.
   useEffect(() => {
@@ -284,10 +327,31 @@ export function GameBoard({
           </span>
         </div>
 
-        <div className={cx('sp-turn', isMyTurn && 'is-you', !playing && 'is-over')} aria-live="polite">
-          <span className="sp-turn__dot" aria-hidden="true" />
-          <span className="sp-turn__text">{turnText}</span>
-          {turnSub && <span className="sp-turn__sub">{turnSub}</span>}
+        <div className="sp-turnbox">
+          <div className={cx('sp-turn', isMyTurn && 'is-you', !playing && 'is-over')} aria-live="polite">
+            <span className="sp-turn__dot" aria-hidden="true" />
+            <span className="sp-turn__text">{turnText}</span>
+            {turnSub && <span className="sp-turn__sub">{turnSub}</span>}
+          </div>
+          {playing && (
+            // Always rendered while playing (empty at first) so the bar doesn't shift on the first move.
+            <p className="sp-lastmove" aria-live="polite">
+              {lastRivalMove ? (
+                <span key={lastRivalMove.id} className="sp-lastmove__inner">
+                  <span
+                    className="sp-lastmove__mark"
+                    style={{ background: avatarColor(colorIndex?.[lastRivalMove.playerId ?? ''] ?? state.players.findIndex((p) => p.id === lastRivalMove.playerId)) }}
+                    aria-hidden="true"
+                  />
+                  <span className="sp-ellipsis">
+                    <LogText message={lastRivalMove.message} names={state.players.map((p) => p.name)} />
+                  </span>
+                </span>
+              ) : (
+                '\u00a0'
+              )}
+            </p>
+          )}
         </div>
 
         <div className="sp-topbar__actions">
@@ -354,6 +418,7 @@ export function GameBoard({
                           key={card.id}
                           card={card}
                           deal
+                          className={freshCardIds.has(card.id) ? 'sp-fresh' : undefined}
                           style={{ '--i': index } as CSSProperties}
                           affordable={!!me && playing && canAfford(me.tokens, me.bonuses, card.cost)}
                           onClick={me && playing ? () => setTarget({ kind: 'market', tier, index, card }) : undefined}
@@ -430,6 +495,7 @@ export function GameBoard({
                   online={!!connected[p.id]}
                   isTurn={playing && i === state.currentPlayerIndex}
                   phase={state.phase}
+                  flash={flashPlayerId === p.id}
                   onReservedClick={me && playing ? (card) => setTarget({ kind: 'reserved', card, ownerId: p.id }) : undefined}
                 />
               ))}
