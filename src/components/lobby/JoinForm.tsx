@@ -76,7 +76,7 @@ export function JoinForm({ view, onJoin }: { view: RoomView; onJoin: (name: stri
             {error}
           </p>
           {view.players.length > 0 && (
-            <p className="muted" style={{ fontSize: 14, margin: 0 }}>
+            <p className="muted" style={{ fontSize: 14, margin: '14px 0 0' }}>
               Already seated: {view.players.map((p) => p.name).join(', ')}
             </p>
           )}
