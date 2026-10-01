@@ -965,14 +965,6 @@
   gap: 8px;
   margin-left: auto;
 }
-.sp-waitnote {
-  margin: 16px 0 0;
-  text-align: center;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 17px;
-  color: var(--text-muted);
-}
 
 /* ---------- holdings (tokens over bonuses, per color) ---------- */
 .sp-holdings {

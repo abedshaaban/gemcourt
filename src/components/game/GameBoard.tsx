@@ -250,6 +250,13 @@ export function GameBoard({
     return () => window.removeEventListener('keydown', onKey)
   }, [rulesOpen])
 
+  // Idle tray text follows the phase, so nothing extra appears below the table mid-turn.
+  let idleText: string
+  if (isMyTurn) idleText = state.phase === 'discard' ? 'Return tokens to finish your turn…' : 'Choose a noble to finish your turn…'
+  else if (!current) idleText = 'Waiting for the next player…'
+  else if (state.phase === 'action') idleText = `Waiting for ${current.name}…`
+  else idleText = `${current.name} ${phaseVerb(state.phase)}`
+
   let turnText: string
   let turnSub: string | null = null
   if (!playing) turnText = 'Game over'
@@ -373,9 +380,7 @@ export function GameBoard({
             {me && playing && !canAct && (
               // Keeps the table the same height between turns so the layout doesn't jump.
               <div className="sp-tray sp-tray--idle" aria-hidden="true">
-                <span className="sp-tray__placeholder">
-                  {isMyTurn ? 'Finish your turn…' : `Waiting for ${current?.name ?? 'the next player'}…`}
-                </span>
+                <span className="sp-tray__placeholder">{idleText}</span>
               </div>
             )}
             {canAct && !stuck && (
@@ -394,11 +399,6 @@ export function GameBoard({
                   setHint(null)
                 }}
               />
-            )}
-            {playing && !isMyTurn && current && state.phase !== 'action' && (
-              <p className="sp-waitnote">
-                {current.name} {phaseVerb(state.phase)}
-              </p>
             )}
           </section>
 
