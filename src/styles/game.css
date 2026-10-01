@@ -564,11 +564,26 @@
     inset 0 0 0 3px rgba(217, 169, 59, 0.45),
     0 10px 22px rgba(0, 0, 0, 0.55);
 }
+/* Keyboard focus: a white-and-blue double ring, distinct from the gold "affordable" glow. */
 .sp-card:focus-visible,
 .sp-back:focus-visible,
 .sp-noble:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 3px;
+  outline: 3px solid #4d9bff;
+  outline-offset: 2px;
+}
+.sp-card:focus-visible::before,
+.sp-back:focus-visible::before,
+.sp-noble:focus-visible::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px #fff;
+  pointer-events: none;
 }
 .sp-card.is-affordable {
   border-color: var(--accent);
@@ -599,12 +614,30 @@
     0 0 24px 4px rgba(240, 198, 90, 0.4),
     0 10px 22px rgba(0, 0, 0, 0.55);
 }
+/* "Can buy" corner tag (replaces the tier numeral on affordable cards). */
+.sp-card__can {
+  position: absolute;
+  z-index: 2;
+  right: 6%;
+  bottom: 4%;
+  display: grid;
+  place-items: center;
+  width: calc(var(--w) * 0.2);
+  height: calc(var(--w) * 0.2);
+  border-radius: 50%;
+  font-size: calc(var(--w) * 0.13);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-ink);
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 8px rgba(240, 198, 90, 0.5);
+}
 /* Blind tag sits in the bottom-right corner, clear of the cost column on the left. */
 .sp-card__blind {
   position: absolute;
   z-index: 2;
   right: 6%;
-  bottom: 17%;
+  bottom: 21%;
   padding: 1px 4px;
   border-radius: 999px;
   font-size: 8px;

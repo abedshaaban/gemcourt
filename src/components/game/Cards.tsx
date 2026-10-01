@@ -33,9 +33,9 @@ function Shell({
   )
 }
 
-export function cardLabel(card: Card): string {
+export function cardLabel(card: Card, affordable?: boolean): string {
   const pts = card.points > 0 ? `${card.points} point${card.points === 1 ? '' : 's'}, ` : ''
-  return `Tier ${ROMAN[card.tier]} card — ${pts}${GEM_NAME[card.bonus]} bonus — costs ${describeCost(card.cost)}`
+  return `Tier ${ROMAN[card.tier]} card — ${pts}${GEM_NAME[card.bonus]} bonus — costs ${describeCost(card.cost)}${affordable ? ' — affordable' : ''}`
 }
 
 /** A face-up development card. */
@@ -64,7 +64,7 @@ export function DevCard({
     <Shell
       onClick={onClick}
       disabled={disabled}
-      label={cardLabel(card)}
+      label={cardLabel(card, affordable)}
       style={style}
       className={cx(
         'sp-card',
@@ -92,9 +92,15 @@ export function DevCard({
           Blind
         </span>
       )}
-      <span className="sp-card__tier" aria-hidden="true">
-        {ROMAN[card.tier]}
-      </span>
+      {affordable ? (
+        <span className="sp-card__can" aria-hidden="true" title="You can buy this">
+          ✓
+        </span>
+      ) : (
+        <span className="sp-card__tier" aria-hidden="true">
+          {ROMAN[card.tier]}
+        </span>
+      )}
     </Shell>
   )
 }
