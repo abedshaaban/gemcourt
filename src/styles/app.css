@@ -113,8 +113,12 @@ a {
 .btn:active:not(:disabled) {
   transform: translateY(1px);
 }
+/* Disabled: a flat, muted button (not just a faded primary) so it never reads as "press me". */
 .btn:disabled {
-  opacity: 0.45;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-faint);
+  box-shadow: none;
 }
 .btn-primary {
   background: linear-gradient(180deg, var(--accent-strong), var(--accent));
@@ -132,6 +136,10 @@ a {
 .btn-ghost:hover:not(:disabled) {
   background: var(--surface-2);
   color: var(--text);
+}
+.btn-ghost:disabled {
+  background: transparent;
+  border-color: transparent;
 }
 .btn-sm {
   padding: 6px 12px;
