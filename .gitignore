@@ -3,3 +3,4 @@ node_modules
 dist
 .tanstack
 .vinxi
+.claude/worktrees
