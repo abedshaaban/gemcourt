@@ -2043,7 +2043,15 @@
   .sp-topbar {
     margin: 0 -12px;
     padding: 10px 12px;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto; /* let the round label give way to the action buttons */
+  }
+  .sp-round {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sp-topbar__actions {
+    gap: 6px;
   }
   .sp-final__who,
   .sp-final__ornament {
