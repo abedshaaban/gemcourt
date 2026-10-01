@@ -71,3 +71,27 @@ Tip: to test alone, open several browser tabs — each tab is a separate player.
 - `src/components/` — lobby and board UI
 
 Game state is kept in memory: restarting the server ends all games.
+
+## 3D asset setup on another machine
+
+The four Blender skills and their references are checked into `.agents/skills/`.
+Three.js and its TypeScript definitions are declared in `package.json` and pinned
+in `pnpm-lock.yaml`. After checking out the repo, run `pnpm install`.
+
+Install Blender separately, then run the asset generator from the repo root:
+
+```bash
+blender --background --python scripts/blender/create_assets.py
+```
+
+On macOS with Blender in Applications:
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/create_assets.py
+```
+
+The script targets Blender 4.5 and creates gemstone and token PNGs plus a
+`merchant-display.glb` in `public/assets/3d/`, and an editable scene at
+`assets/blender/splendor-assets.blend`. It creates its output folders automatically.
+The generated assets are not yet integrated into the UI. The script has not yet
+been run or visually verified because Blender was unavailable on this machine.
