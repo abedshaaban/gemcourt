@@ -184,5 +184,7 @@ export function useRoom(code: string) {
 
   const act = useCallback((action: GameAction) => op((token) => ({ op: 'action', token, action })), [op])
 
-  return { ready, session, view, conn, join, op, leave, act, removed, clearRemoved: () => setRemoved(false) }
+  const clearRemoved = useCallback(() => setRemoved(false), [])
+
+  return { ready, session, view, conn, join, op, leave, act, removed, clearRemoved }
 }
