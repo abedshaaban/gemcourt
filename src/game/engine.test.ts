@@ -889,3 +889,42 @@ describe('skipTurn logging', () => {
     expect(next.log[next.log.length - 1].message).toBe("A's turn was skipped (player offline) and returned 1 diamond")
   })
 })
+
+describe('skipTurn noble check', () => {
+  it('awards a qualifying noble when skipping during discard', () => {
+    const s = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], () => 0.5)
+    s.players[0].cards = [mk('w1', 'white'), mk('w2', 'white')]
+    s.players[0].tokens = tokens({ white: 5, blue: 3, green: 3 })
+    s.nobles = [noble('n1', { white: 2 })]
+    s.phase = 'discard'
+    const next = skipTurn(s)
+    expect(next.players[0].nobles.map((n) => n.id)).toEqual(['n1'])
+    expect(next.nobles).toHaveLength(0)
+    expect(tokenTotal(next.players[0].tokens)).toBe(10)
+    expect(next.phase).toBe('action')
+    expect(next.currentPlayerIndex).toBe(1)
+  })
+
+  it('auto-picks the first noble when several qualify during discard', () => {
+    const s = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], () => 0.5)
+    s.players[0].cards = [mk('w1', 'white'), mk('b1', 'blue')]
+    s.players[0].tokens = tokens({ white: 5, blue: 3, green: 3 })
+    s.nobles = [noble('n1', { white: 1 }), noble('n2', { blue: 1 })]
+    s.phase = 'discard'
+    const next = skipTurn(s)
+    expect(next.players[0].nobles.map((n) => n.id)).toEqual(['n1'])
+    expect(next.nobles.map((n) => n.id)).toEqual(['n2'])
+    expect(next.phase).toBe('action')
+    expect(next.pendingNobleIds).toEqual([])
+    expect(next.currentPlayerIndex).toBe(1)
+  })
+
+  it('does not award nobles when skipping in action phase', () => {
+    const s = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], () => 0.5)
+    s.players[0].cards = [mk('w1', 'white')]
+    s.nobles = [noble('n1', { white: 1 })]
+    const next = skipTurn(s)
+    expect(next.players[0].nobles).toHaveLength(0)
+    expect(next.currentPlayerIndex).toBe(1)
+  })
+})

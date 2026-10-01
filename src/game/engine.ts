@@ -344,7 +344,8 @@ function discard(s: GameState, player: PlayerState, tokens: unknown): Err | null
 /**
  * Server-side escape hatch for an absent player: finish the current player's turn on their behalf.
  * In 'action' phase the turn is simply skipped; excess tokens are returned (most plentiful gems first,
- * gold last) and a pending noble choice picks the first eligible noble.
+ * gold last) and a pending noble choice picks the first eligible noble. A skip during 'discard' still
+ * runs the end-of-turn noble check (the player already acted); a skip in 'action' does not.
  */
 export function skipTurn(state: GameState): GameState {
   if (state.status === 'finished') return state
@@ -362,6 +363,12 @@ export function skipTurn(state: GameState): GameState {
     excess--
   }
   if (s.phase === 'chooseNoble' && s.pendingNobleIds.length) awardNoble(s, player, s.pendingNobleIds[0])
+  if (s.phase === 'discard') {
+    // The player did act this turn, so the end-of-turn noble check still applies (first eligible if several).
+    const bonuses = bonusesOf(player.cards)
+    const noble = s.nobles.find((n) => meetsNoble(bonuses, n))
+    if (noble) awardNoble(s, player, noble.id)
+  }
   const back = tokenTotal(returned) > 0 ? ` and returned ${describeTokens(returned)}` : ''
   addLog(s, null, `${player.name}'s turn was skipped (player offline)${back}`)
   endTurn(s, player)
