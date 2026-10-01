@@ -429,20 +429,18 @@ a.btn {
 }
 
 .skip-banner {
-  position: fixed;
-  top: 76px; /* under the top bar, clear of the bottom toast and your own area */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 45; /* above the board, below modals (60) and the results screen (70) */
+  /* In normal flow above the board so it never covers nobles, market or your own area. */
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
-  max-width: calc(100vw - 32px);
-  padding: 10px 12px 10px 18px;
-  border-radius: 16px;
+  width: calc(100% - 40px);
+  max-width: 1520px; /* matches the board's content width */
+  margin: 12px auto 0;
+  padding: 8px 12px 8px 18px;
+  border-radius: var(--radius);
   background: var(--surface-3);
   border: 1px solid var(--accent);
-  box-shadow: var(--shadow);
   font-size: 14px;
 }
 .conn-banner[role='alert'] {
@@ -455,11 +453,9 @@ a.btn {
   flex-shrink: 0;
 }
 @media (max-width: 760px) {
-  /* The top bar wraps to two rows on phones; park the banner at the bottom instead. */
   .skip-banner {
-    top: auto;
-    bottom: 12px;
-    width: calc(100vw - 24px);
+    width: calc(100% - 24px);
+    justify-content: space-between;
     font-size: 13px;
   }
 }
