@@ -1862,6 +1862,14 @@
   flex: 1;
   font-size: 14px;
 }
+.sp-toast--noble {
+  border-color: rgba(240, 198, 90, 0.7);
+  background: linear-gradient(180deg, #2c2414, #1d1910);
+}
+.sp-toast--noble .sp-toast__icon {
+  background: var(--accent-strong);
+  color: var(--accent-ink);
+}
 
 /* ---------- motion ---------- */
 .sp-deal {
@@ -2087,6 +2095,31 @@
 }
 .sp-noble .sp-req.sp-c-white {
   box-shadow: inset 0 0 0 1px rgba(60, 45, 20, 0.6), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+/* your progress toward a noble: a thin meter under each requirement */
+.sp-req {
+  position: relative;
+}
+.sp-req__meter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--s) * -0.36);
+  height: max(2px, calc(var(--s) * 0.2));
+  border-radius: 999px;
+  background: rgba(60, 45, 20, 0.28);
+  overflow: hidden;
+}
+.sp-req__meter > span {
+  display: block;
+  height: 100%;
+  background: #3d2c0c;
+}
+.sp-req.is-met .sp-req__meter > span {
+  background: #2f8a55;
+}
+.sp-req.is-met {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0 1.5px #2f8a55, 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .sp-noble__crest {
   top: 4%;

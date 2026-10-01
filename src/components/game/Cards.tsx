@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { Card, Noble, Tier } from '../../game/types'
+import type { Card, GemCounts, Noble, Tier } from '../../game/types'
 import { GEM_COLORS } from '../../game/types'
 import { CostPip, GemIcon, ReqPip, gemsWithCost } from './Gem'
 import { GEM_NAME, ROMAN, cx, describeCost } from './ui'
@@ -160,9 +160,20 @@ export function NobleTile({
   disabled,
   className,
   highlight,
-}: Clickable & { noble: Noble; size?: 'xs' | 'sm' | 'md' | 'lg'; className?: string; highlight?: boolean }) {
+  progress,
+}: Clickable & {
+  noble: Noble
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  className?: string
+  highlight?: boolean
+  /** the viewer's bonuses: shows how close they are to each requirement */
+  progress?: GemCounts
+}) {
   const reqs = GEM_COLORS.filter((c) => noble.requirement[c] > 0)
-  const label = `Noble — ${noble.points} points — requires ${reqs.map((c) => `${noble.requirement[c]} ${GEM_NAME[c]}`).join(', ')} cards`
+  const mine = progress
+    ? ` — you have ${reqs.map((c) => `${Math.min(progress[c], noble.requirement[c])} of ${noble.requirement[c]} ${GEM_NAME[c]}`).join(', ')}`
+    : ''
+  const label = `Noble — ${noble.points} points — requires ${reqs.map((c) => `${noble.requirement[c]} ${GEM_NAME[c]}`).join(', ')} cards${mine}`
   return (
     <Shell
       onClick={onClick}
@@ -174,7 +185,7 @@ export function NobleTile({
         <span className="sp-noble__points">{noble.points}</span>
         <span className="sp-noble__reqs">
           {reqs.map((c) => (
-            <ReqPip key={c} color={c} n={noble.requirement[c]} />
+            <ReqPip key={c} color={c} n={noble.requirement[c]} have={progress?.[c]} />
           ))}
         </span>
       </span>

@@ -44,11 +44,21 @@ export function CostPip({ color, n }: { color: GemColor; n: number }) {
   )
 }
 
-/** Small card-shaped pip with a number (noble requirement — counted in cards/bonuses). */
-export function ReqPip({ color, n }: { color: GemColor; n: number }) {
+/** Small card-shaped pip with a number (noble requirement — counted in cards/bonuses).
+ *  With `have`, a meter underneath shows the viewer's progress toward it. */
+export function ReqPip({ color, n, have }: { color: GemColor; n: number; have?: number }) {
+  const got = have === undefined ? null : Math.min(have, n)
   return (
-    <span className={cx('sp-req', `sp-c-${color}`)} title={`${n} ${GEM_NAME[color]} cards`}>
+    <span
+      className={cx('sp-req', `sp-c-${color}`, got !== null && got >= n && 'is-met')}
+      title={`${n} ${GEM_NAME[color]} cards${got !== null ? ` — you have ${got}/${n}` : ''}`}
+    >
       {n}
+      {got !== null && (
+        <span className="sp-req__meter" aria-hidden="true">
+          <span style={{ width: `${(got / n) * 100}%` }} />
+        </span>
+      )}
     </span>
   )
 }

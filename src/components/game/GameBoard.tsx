@@ -87,7 +87,7 @@ export function GameBoard({
   const [target, setTarget] = useState<Target | null>(null)
   const [pending, setPending] = useState(false)
   const pendingRef = useRef(false)
-  const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
+  const [toast, setToast] = useState<{ id: number; message: string; kind?: 'noble' } | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [resultsHidden, setResultsHidden] = useState(false)
@@ -107,11 +107,16 @@ export function GameBoard({
   const seenMarket = useRef<Set<string> | null>(null)
   const marketKey = TIER_ORDER.map((t) => state.market[t].map((c) => c?.id ?? '-').join(',')).join('|')
 
-  // Briefly highlight the rival who just acted.
+  // Briefly highlight the rival who just acted; congratulate me on a noble visit.
   useEffect(() => {
     const prev = seenLogId.current
     seenLogId.current = lastLogId
     if (prev === null) return // first render: nothing "just happened"
+    const visit = state.log.find((e) => e.id > prev && youId && e.playerId === youId && / visited by a noble/.test(e.message))
+    if (visit) {
+      const pts = /\(\+(\d+)\)/.exec(visit.message)?.[1] ?? '3'
+      setToast({ id: Date.now(), message: `A noble visits you! +${pts} prestige`, kind: 'noble' })
+    }
     const actor = [...state.log].reverse().find((e) => e.id > prev && e.playerId && e.playerId !== youId)
     // (a re-run cancels the previous timer, so always settle the highlight here)
     setFlashPlayerId(actor?.playerId ?? null)
@@ -164,7 +169,7 @@ export function GameBoard({
           showError(res.error ?? 'That move was not allowed.')
           return false
         }
-        setToast(null)
+        setToast((t) => (t?.kind === 'noble' ? t : null)) // clear errors, keep good news
         return true
       } catch (err) {
         showError(err instanceof Error ? err.message : 'Could not reach the server.')
@@ -396,6 +401,7 @@ export function GameBoard({
                   noble={n}
                   size="md"
                   highlight={nobleNeeded && state.pendingNobleIds.includes(n.id)}
+                  progress={me && playing ? me.bonuses : undefined}
                 />
               ))}
               {state.nobles.length === 0 && <span className="sp-none">All nobles have found patrons.</span>}
@@ -596,9 +602,9 @@ export function GameBoard({
         ))}
 
       {toast && (
-        <div className="sp-toast" role="alert" key={toast.id}>
+        <div className={cx('sp-toast', toast.kind === 'noble' && 'sp-toast--noble')} role={toast.kind ? 'status' : 'alert'} key={toast.id}>
           <span className="sp-toast__icon" aria-hidden="true">
-            !
+            {toast.kind === 'noble' ? '♛' : '!'}
           </span>
           <span className="sp-toast__msg">{toast.message}</span>
           <button type="button" className="sp-iconbtn" onClick={() => setToast(null)} aria-label="Dismiss">
