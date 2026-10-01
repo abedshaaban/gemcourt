@@ -2076,13 +2076,13 @@
   }
   .sp-final {
     right: 0;
-    max-width: calc(100% - 90px);
-    font-size: 14px;
-    padding: 3px 12px;
+    max-width: calc(100% - 74px);
+    font-size: 13px;
+    padding: 3px 10px;
   }
   .sp-final strong {
-    font-size: 11px;
-    letter-spacing: 0.08em;
+    font-size: 10px;
+    letter-spacing: 0.06em;
   }
   .sp-turnbox {
     grid-column: 1 / -1;
