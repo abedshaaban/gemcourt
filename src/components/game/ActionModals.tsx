@@ -45,6 +45,10 @@ function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
   )
 }
 
+/** Reserving gains 1 gold (if any left); warn when that pushes the player over the token limit. */
+const reserveOverflows = (me: PublicPlayer, bankGold: number) => bankGold > 0 && me.tokenCount + 1 > MAX_TOKENS
+const RESERVE_OVERFLOW_HINT = 'You will gain 1 gold and must then return a token.'
+
 export function CardActionModal({
   card,
   me,
@@ -68,7 +72,7 @@ export function CardActionModal({
 }) {
   const affordable = computePayment(me.tokens, me.bonuses, card.cost) !== null
   const reservedFull = me.reserved.length >= MAX_RESERVED
-  const overflow = bankGold > 0 && me.tokenCount + 1 > MAX_TOKENS
+  const overflow = reserveOverflows(me, bankGold)
   return (
     <Modal
       title={fromReserve ? 'Reserved card' : `Tier ${ROMAN[card.tier]} card`}
@@ -93,7 +97,7 @@ export function CardActionModal({
                   ? `You already hold ${MAX_RESERVED} reserved cards.`
                   : bankGold > 0
                     ? overflow
-                      ? 'You will gain 1 gold and must then return a token.'
+                      ? RESERVE_OVERFLOW_HINT
                       : 'Hold it for later and gain 1 gold (wild).'
                     : 'No gold left in the bank — you will gain none.'}
               </p>
@@ -123,6 +127,7 @@ export function DeckModal({
   onClose: () => void
 }) {
   const full = me.reserved.length >= MAX_RESERVED
+  const overflow = reserveOverflows(me, bankGold)
   return (
     <Modal
       title={`Tier ${ROMAN[tier]} deck`}
@@ -138,6 +143,7 @@ export function DeckModal({
             Reserve blind{bankGold > 0 ? ' · +1 gold' : ''}
           </button>
           {full && <p className="sp-hint sp-warn">You already hold {MAX_RESERVED} reserved cards.</p>}
+          {!full && overflow && <p className="sp-hint">{RESERVE_OVERFLOW_HINT}</p>}
         </div>
       </div>
     </Modal>
