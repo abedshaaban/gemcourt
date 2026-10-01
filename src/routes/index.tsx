@@ -68,12 +68,13 @@ function HomePage() {
             placeholder="5-letter code"
             aria-label="Game code"
             value={code}
-            maxLength={CODE_LENGTH}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
             onChange={(e) => {
-              setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))
+              // Accept a pasted invite link too (…/room/ABCDE); no maxLength so the paste isn't cut first.
+              const raw = e.target.value.match(/\/room\/([a-z]+)/i)?.[1] ?? e.target.value
+              setCode(raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, CODE_LENGTH))
               setError('')
             }}
           />
