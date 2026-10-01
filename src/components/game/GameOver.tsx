@@ -25,6 +25,10 @@ export function GameOver({
   const winners = new Set(state.winnerIds)
   const winnerNames = state.players.filter((p) => winners.has(p.id)).map((p) => p.name)
   const youWon = youId !== null && winners.has(youId)
+  // Only mention the tie-break when players tied on points and card count actually decided it.
+  const best = Math.max(...state.players.map((p) => p.points))
+  const tiedOnPoints = state.players.filter((p) => p.points === best).length
+  const tieBroken = tiedOnPoints > 1 && winners.size > 0 && winners.size < tiedOnPoints
 
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -77,9 +81,15 @@ export function GameOver({
               <li key={p.id} className={cx('sp-rank__row', won && 'is-winner', p.id === youId && 'is-you')}>
                 <span className="sp-rank__place">{won ? <span className="sp-rank__crown">♛</span> : places[k]}</span>
                 <Avatar name={p.name} index={colorIndex?.[p.id] ?? i} size={34} />
-                <span className="sp-rank__name">
-                  <span className="sp-ellipsis">{p.name}</span>
-                  {p.id === youId && <span className="badge">You</span>}
+                <span className="sp-rank__who">
+                  <span className="sp-rank__name">
+                    <span className="sp-ellipsis">{p.name}</span>
+                    {p.id === youId && <span className="badge">You</span>}
+                  </span>
+                  {/* compact stats for phones, where the stat columns are hidden */}
+                  <span className="sp-rank__sub">
+                    {p.cards.length} card{p.cards.length === 1 ? '' : 's'} · {p.nobles.length} noble{p.nobles.length === 1 ? '' : 's'}
+                  </span>
                 </span>
                 <span className="sp-rank__stat" title="Development cards">
                   <b>{p.cards.length}</b> cards
@@ -95,7 +105,9 @@ export function GameOver({
             )
           })}
         </ol>
-        <p className="sp-over__tiebreak">Ties are broken by the fewest development cards.</p>
+        {tieBroken && (
+          <p className="sp-over__tiebreak">Tied on points — the tie went to the fewest development cards.</p>
+        )}
 
         <div className="sp-over__actions">
           {isHost ? (
