@@ -26,25 +26,31 @@ export const Route = createFileRoute('/api/rooms/$code/events')({
                 cleanup()
               }
             }
-            const unsubscribe = subscribe(params.code, token, (view: RoomView) => {
+            let unsubscribe: (() => void) | null = null
+            let ping: ReturnType<typeof setInterval> | undefined
+            // Set up before subscribing: the initial view is sent synchronously and may already fail.
+            cleanup = () => {
+              if (closed) return
+              closed = true
+              clearInterval(ping)
+              unsubscribe?.()
+              try {
+                controller.close()
+              } catch {}
+            }
+            unsubscribe = subscribe(params.code, token, (view: RoomView) => {
               write(`data: ${JSON.stringify(view)}\n\n`)
             })
             if (!unsubscribe) {
               write(`event: missing\ndata: {}\n\n`)
               closed = true
-              controller.close()
-              return
-            }
-            const ping = setInterval(() => write(`: ping\n\n`), 15000)
-            cleanup = () => {
-              if (closed) return
-              closed = true
-              clearInterval(ping)
-              unsubscribe()
               try {
                 controller.close()
               } catch {}
+              return
             }
+            if (closed) return unsubscribe() // first send failed while subscribing
+            ping = setInterval(() => write(`: ping\n\n`), 15000)
             request.signal.addEventListener('abort', () => cleanup())
           },
           cancel() {
