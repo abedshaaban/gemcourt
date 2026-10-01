@@ -1033,6 +1033,15 @@
   background: none;
   box-shadow: none;
 }
+/* Compact (rival) holdings: empty colors become faint ghosts without a "0", so what they do hold stands out. */
+.sp-holdings--sm .sp-chip.is-zero,
+.sp-holdings--sm .sp-bonus.is-zero {
+  opacity: 0.1;
+}
+.sp-holdings--sm .sp-chip.is-zero .sp-chip__count,
+.sp-holdings--sm .sp-bonus.is-zero > * {
+  visibility: hidden;
+}
 
 /* ---------- points crest ---------- */
 .sp-crest {
