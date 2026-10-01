@@ -1268,6 +1268,7 @@
 .sp-modal {
   width: min(520px, 100%);
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px); /* mobile: keep footer buttons above the browser toolbar */
   overflow: auto;
   border-radius: 18px;
   border: 1px solid rgba(217, 169, 59, 0.45);
@@ -1553,6 +1554,7 @@
 .sp-over__card {
   width: min(620px, 100%);
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px); /* mobile: keep footer buttons above the browser toolbar */
   overflow: auto;
   text-align: center;
   padding: 30px 28px 24px;
