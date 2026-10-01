@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import { MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
 import type { PublicPlayer, ReservedCard, TurnPhase } from '../../game/types'
 import { canAfford } from '../../game/helpers'
@@ -54,62 +55,93 @@ export function OpponentPanel({
   flash?: boolean // just made a move: highlight briefly
   onReservedClick?: (card: ReservedCard) => void // look-only view of a visible reserved card
 }) {
+  // Phones show a one-line summary that expands on tap; wider layouts hide the toggle and always show everything.
+  const [open, setOpen] = useState(false)
+  const bodyId = useId()
+  const status = phase === 'action' ? 'Taking a turn…' : phaseVerb(phase).replace(/^is /, '')
   return (
-    <article className={cx('sp-opp', isTurn && 'is-turn', flash && 'is-flash')} aria-label={`${player.name}${isTurn ? ' (current turn)' : ''}`}>
-      <header className="sp-opp__head">
-        <Avatar name={player.name} index={index} />
-        <div className="sp-opp__who">
-          <div className="sp-opp__name">
+    <article
+      className={cx('sp-opp', isTurn && 'is-turn', flash && 'is-flash', open && 'is-open')}
+      aria-label={`${player.name}${isTurn ? ' (current turn)' : ''}`}
+    >
+      <button
+        type="button"
+        className="sp-opp__toggle"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Avatar name={player.name} index={index} size={28} />
+        <span className="sp-opp__who">
+          <span className="sp-opp__name">
             <span className="sp-ellipsis">{player.name}</span>
             <OnlineDot online={online} />
+            {isTurn && <span className="sp-opp__turn sp-ellipsis">{status}</span>}
+          </span>
+          <span className="sp-opp__meta sp-opp__stats">
+            {player.cards.length} card{player.cards.length === 1 ? '' : 's'} · {player.tokenCount}/{MAX_TOKENS} tokens ·{' '}
+            {player.reserved.length} reserved
+          </span>
+        </span>
+        <PointsCrest points={player.points} size="sm" />
+        <span className="sp-opp__chev" aria-hidden="true" />
+      </button>
+      <div className="sp-opp__body" id={bodyId}>
+        <header className="sp-opp__head">
+          <Avatar name={player.name} index={index} />
+          <div className="sp-opp__who">
+            <div className="sp-opp__name">
+              <span className="sp-ellipsis">{player.name}</span>
+              <OnlineDot online={online} />
+            </div>
+            <div className="sp-opp__meta">
+              {isTurn ? (
+                <span className="sp-opp__turn">{status}</span>
+              ) : (
+                <>
+                  {player.cards.length} card{player.cards.length === 1 ? '' : 's'} · {player.tokenCount}/{MAX_TOKENS} tokens
+                </>
+              )}
+            </div>
           </div>
-          <div className="sp-opp__meta">
-            {isTurn ? (
-              <span className="sp-opp__turn">{phase === 'action' ? 'Taking a turn…' : phaseVerb(phase).replace(/^is /, '')}</span>
-            ) : (
-              <>
-                {player.cards.length} card{player.cards.length === 1 ? '' : 's'} · {player.tokenCount}/{MAX_TOKENS} tokens
-              </>
+          <PointsCrest points={player.points} />
+        </header>
+        <Holdings tokens={player.tokens} bonuses={player.bonuses} size="sm" />
+        {(player.reserved.length > 0 || player.nobles.length > 0) && (
+          <div className="sp-opp__extras">
+            {player.reserved.length > 0 && (
+              <div className="sp-opp__reserved" aria-label={`${player.reserved.length} reserved`}>
+                <span className="sp-mini-label">Reserved</span>
+                <div className="sp-opp__row">
+                  {player.reserved.map((r) =>
+                    isHiddenCard(r) ? (
+                      <CardBack key={r.id} tier={r.tier} size="sm" className="sp-peek" />
+                    ) : (
+                      <DevCard
+                        key={r.id}
+                        card={r}
+                        size="sm"
+                        className="sp-peek"
+                        onClick={onReservedClick ? () => onReservedClick(r) : undefined}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+            {player.nobles.length > 0 && (
+              <div className="sp-opp__nobles">
+                <span className="sp-mini-label">Nobles</span>
+                <div className="sp-opp__row">
+                  {player.nobles.map((n) => (
+                    <NobleTile key={n.id} noble={n} size="xs" className="sp-peek" />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        </div>
-        <PointsCrest points={player.points} />
-      </header>
-      <Holdings tokens={player.tokens} bonuses={player.bonuses} size="sm" />
-      {(player.reserved.length > 0 || player.nobles.length > 0) && (
-        <div className="sp-opp__extras">
-          {player.reserved.length > 0 && (
-            <div className="sp-opp__reserved" aria-label={`${player.reserved.length} reserved`}>
-              <span className="sp-mini-label">Reserved</span>
-              <div className="sp-opp__row">
-                {player.reserved.map((r) =>
-                  isHiddenCard(r) ? (
-                    <CardBack key={r.id} tier={r.tier} size="sm" className="sp-peek" />
-                  ) : (
-                    <DevCard
-                      key={r.id}
-                      card={r}
-                      size="sm"
-                      className="sp-peek"
-                      onClick={onReservedClick ? () => onReservedClick(r) : undefined}
-                    />
-                  ),
-                )}
-              </div>
-            </div>
-          )}
-          {player.nobles.length > 0 && (
-            <div className="sp-opp__nobles">
-              <span className="sp-mini-label">Nobles</span>
-              <div className="sp-opp__row">
-                {player.nobles.map((n) => (
-                  <NobleTile key={n.id} noble={n} size="xs" className="sp-peek" />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </article>
   )
 }
@@ -195,5 +227,24 @@ export function YourArea({
         </div>
       </div>
     </section>
+  )
+}
+
+/** Phone-only sticky strip with my points, tokens and bonuses, so they stay visible while I pick gems or cards.
+ *  A visual duplicate of "Your area" (hidden from assistive tech, which reads that section instead). */
+export function MyBar({ player, isTurn }: { player: PublicPlayer; isTurn: boolean }) {
+  return (
+    <div className={cx('sp-mybar', isTurn && 'is-turn')} aria-hidden="true">
+      <div className="sp-mybar__id">
+        <PointsCrest points={player.points} size="sm" />
+        <span className="sp-mybar__who">
+          <span className="sp-mybar__label">You</span>
+          <span className={cx('sp-mybar__tokens', player.tokenCount >= MAX_TOKENS && 'sp-warn')}>
+            {player.tokenCount}/{MAX_TOKENS}
+          </span>
+        </span>
+      </div>
+      <Holdings tokens={player.tokens} bonuses={player.bonuses} size="sm" />
+    </div>
   )
 }

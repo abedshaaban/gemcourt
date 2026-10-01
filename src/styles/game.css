@@ -1163,6 +1163,15 @@
 .sp-crest--lg {
   --s: 56px;
 }
+.sp-crest--sm {
+  --s: 30px;
+  padding-bottom: 2px;
+}
+
+/* ---------- my sticky bar (phones only) ---------- */
+.sp-mybar {
+  display: none;
+}
 
 /* ---------- opponents ---------- */
 .sp-opps {
@@ -1266,6 +1275,13 @@
 }
 .sp-opp .sp-mini-label {
   margin-bottom: 4px;
+}
+/* phone-only summary row (see the 760px rules); elsewhere the body lays out as if it weren't wrapped */
+.sp-opp__toggle {
+  display: none;
+}
+.sp-opp__body {
+  display: contents;
 }
 
 /* ---------- your area ---------- */
@@ -2138,6 +2154,195 @@
   }
   .sp-rank__sub {
     display: block;
+  }
+
+  /* One order in both states: the table first, so nothing jumps when the turn passes. */
+  .sp-table,
+  .is-my-turn .sp-table {
+    order: 0;
+  }
+  .sp-opps { order: 1; }
+  .sp-you { order: 2; }
+  .sp-log { order: 3; }
+
+  /* comfortable tap targets */
+  .sp-game .btn-sm {
+    min-height: 40px;
+  }
+  .sp-iconbtn {
+    width: 40px;
+    height: 40px;
+  }
+  .sp-topbar .btn-sm {
+    padding: 6px 10px;
+  }
+
+  /* bank: all six piles on one row */
+  .sp-bankcol {
+    --chip-lg: clamp(34px, calc((100vw - 96px) / 6 - 8px), 44px);
+  }
+  .sp-bank__piles {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+  }
+  .sp-pile {
+    padding: 2px;
+  }
+  .sp-bankcol .sp-bank {
+    flex: 1;
+  }
+
+  /* tray: buttons beside the picked chips, the hint underneath — keeps "Take gems" above my bar */
+  .sp-tray:not(.sp-tray--idle) {
+    gap: 6px 10px;
+    padding: 8px 12px;
+  }
+  .sp-tray__chips {
+    flex: 1;
+  }
+  .sp-tray__chips .sp-tray__placeholder {
+    display: none; /* the hint below says what to do */
+  }
+  .sp-tray__hint {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  /* rivals: a one-line summary that expands on tap */
+  .sp-opps__list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .sp-opp {
+    gap: 0;
+    padding: 0;
+  }
+  .sp-opp__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: inherit;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .sp-opp__toggle:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: -2px;
+  }
+  .sp-opp__toggle .sp-opp__who {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .sp-opp__toggle .sp-opp__turn {
+    font-size: 13px;
+    font-weight: 400;
+    min-width: 0;
+  }
+  .sp-opp__stats {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sp-opp__chev {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    margin: 0 4px 4px 2px;
+    border-right: 2px solid var(--text-faint);
+    border-bottom: 2px solid var(--text-faint);
+    transform: rotate(45deg);
+    transition: transform 0.2s;
+  }
+  .sp-opp.is-open .sp-opp__chev {
+    transform: translateY(3px) rotate(-135deg);
+  }
+  .sp-opp__body {
+    display: none;
+  }
+  .sp-opp.is-open .sp-opp__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 2px 12px 12px;
+  }
+  .sp-opp__body > .sp-opp__head {
+    display: none; /* the summary row already says who it is */
+  }
+
+  /* my resources stay on screen while I pick gems or cards */
+  .sp-game {
+    --mybar-h: 68px;
+  }
+  .sp-game.has-mybar {
+    padding-bottom: calc(20px + var(--mybar-h) + env(safe-area-inset-bottom, 0px));
+  }
+  .sp-mybar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30; /* above the board, below the rules drawer (40), modals (60) and toasts (90) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: var(--mybar-h);
+    padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(0deg, rgba(10, 13, 21, 0.98), rgba(10, 13, 21, 0.9));
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--hair);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  }
+  .sp-mybar.is-turn {
+    border-top-color: rgba(217, 169, 59, 0.7);
+  }
+  .sp-mybar__id {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sp-mybar__who {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+  .sp-mybar__label {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .sp-mybar__tokens {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* zero counts stay readable here: it's my own tally */
+  .sp-mybar .sp-holdings--sm .sp-chip.is-zero,
+  .sp-mybar .sp-holdings--sm .sp-bonus.is-zero {
+    opacity: 0.22;
+  }
+  .has-mybar .sp-toast {
+    bottom: calc(var(--mybar-h) + 12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Narrow phones: the 40px tap targets leave less room, so tighten the brand to keep "Round N" readable. */
+@media (max-width: 380px) {
+  .sp-brand {
+    font-size: 17px;
+    letter-spacing: 0.06em;
   }
 }
 

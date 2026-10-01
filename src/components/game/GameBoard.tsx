@@ -18,7 +18,7 @@ import { CardBack, DevCard, EmptySlot, NobleTile } from './Cards'
 import { GameLog } from './GameLog'
 import { GameOver } from './GameOver'
 import { LogText } from './LogText'
-import { OpponentPanel, YourArea } from './PlayerPanels'
+import { MyBar, OpponentPanel, YourArea } from './PlayerPanels'
 import { RulesPanel } from './RulesPanel'
 import { GEM_NAME, GEM_PLURAL, ROMAN, avatarColor, cx, phaseVerb } from './ui'
 import { useTurnAlert } from './useTurnAlert'
@@ -41,6 +41,8 @@ type Target =
 
 const TIER_ORDER: Tier[] = [3, 2, 1]
 const FLASH_MS = 2000 // how long a rival's panel and a refilled market slot stay highlighted
+const PHONE_MQ = '(max-width: 760px)' // keep in sync with the phone breakpoint in game.css
+const USER_SCROLL_QUIET_MS = 1000 // don't auto-scroll if the user touched the scroll this recently
 
 /** Next token selection after clicking a bank pile, plus an optional explanatory hint. */
 function nextSelection(sel: GemColor[], color: GemColor, bank: TokenCounts): { sel: GemColor[]; hint?: string } {
@@ -303,6 +305,40 @@ export function GameBoard({
     (nobleNeeded && pendingNobles.length > 0) ||
     (state.status === 'finished' && !resultsHidden)
 
+  // Phone: when my turn starts, bring the table (market, bank, tray) into view under the sticky top bar —
+  // unless an overlay is up or the user is scrolling themselves.
+  const tableRef = useRef<HTMLElement>(null)
+  const lastUserScroll = useRef(0)
+  const wasMyTurn = useRef(isMyTurn)
+  const overlayRef = useRef(false)
+  overlayRef.current = rulesOpen || confirmLeave // card modals close by themselves when the turn changes
+  useEffect(() => {
+    const mark = () => {
+      lastUserScroll.current = Date.now()
+    }
+    const opts = { passive: true } as const
+    window.addEventListener('touchstart', mark, opts)
+    window.addEventListener('touchmove', mark, opts)
+    window.addEventListener('wheel', mark, opts)
+    return () => {
+      window.removeEventListener('touchstart', mark)
+      window.removeEventListener('touchmove', mark)
+      window.removeEventListener('wheel', mark)
+    }
+  }, [])
+  useEffect(() => {
+    const started = isMyTurn && !wasMyTurn.current
+    wasMyTurn.current = isMyTurn
+    const table = tableRef.current
+    if (!started || !table || overlayRef.current || !window.matchMedia(PHONE_MQ).matches) return
+    if (Date.now() - lastUserScroll.current < USER_SCROLL_QUIET_MS) return
+    const barH = document.querySelector('.sp-topbar')?.getBoundingClientRect().height ?? 0
+    const delta = table.getBoundingClientRect().top - barH - 8
+    if (Math.abs(delta) < 24) return // already in place
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: window.scrollY + delta, behavior: reduce ? 'auto' : 'smooth' })
+  }, [isMyTurn])
+
   useEffect(() => {
     if (!rulesOpen) return
     const onKey = (e: KeyboardEvent) => {
@@ -332,7 +368,7 @@ export function GameBoard({
   } else turnText = 'Waiting…'
 
   return (
-    <div className={cx('sp-game', isMyTurn && 'is-my-turn', !me && 'is-spectator')}>
+    <div className={cx('sp-game', isMyTurn && 'is-my-turn', !me && 'is-spectator', me && playing && 'has-mybar')}>
       {/* ---------- top bar ---------- */}
       <header className="sp-topbar">
         <div className="sp-topbar__brand">
@@ -428,7 +464,7 @@ export function GameBoard({
       <div className="sp-main" inert={overlayOpen}>
         <div className="sp-left">
           {/* ---------- table ---------- */}
-          <section className="sp-table" aria-label="Table">
+          <section className="sp-table" aria-label="Table" ref={tableRef}>
             <div className="sp-nobles" aria-label="Nobles">
               {state.nobles.map((n) => (
                 <NobleTile
@@ -545,6 +581,8 @@ export function GameBoard({
           <GameLog log={state.log} players={state.players} colorIndex={colorIndex} />
         </aside>
       </div>
+
+      {me && playing && <MyBar player={me} isTurn={isMyTurn} />}
 
       {/* ---------- drawers, modals, overlays ---------- */}
       <div className={cx('sp-drawer-scrim', rulesOpen && 'is-open')} onClick={() => setRulesOpen(false)} aria-hidden="true" />
