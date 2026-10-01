@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MAX_PLAYERS, MIN_PLAYERS } from '~/game/types'
 import { NAME_MAX } from '~/lib/protocol'
 import type { OpResult, RoomOp, RoomView } from '~/lib/protocol'
@@ -21,6 +21,9 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
   const [nameDraft, setNameDraft] = useState(me?.name ?? '')
   const [copied, setCopied] = useState<'code' | 'link' | 'failed' | null>(null)
   const [lanUrls, setLanUrls] = useState<string[]>([])
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(() => () => clearTimeout(copiedTimer.current), [])
 
   useEffect(() => {
     apiRoomInfo(view.code)
@@ -51,7 +54,8 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
   async function copy(text: string, what: 'code' | 'link') {
     const ok = await copyText(text)
     setCopied(ok ? what : 'failed')
-    setTimeout(() => setCopied(null), 1600)
+    clearTimeout(copiedTimer.current)
+    copiedTimer.current = setTimeout(() => setCopied(null), 1600)
   }
 
   const offline = view.players.filter((p) => !p.connected)
