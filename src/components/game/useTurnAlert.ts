@@ -5,6 +5,12 @@ const TURN_TITLE = '● Your turn — Splendor'
 const FLASH_TITLE = '○ YOUR TURN — Splendor'
 const SOUND_KEY = 'splendor:turn-sound'
 
+/** Browsers block sound and vibration until the page has had a tap or click; skip quietly until then. */
+function hasUserGesture(): boolean {
+  const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation
+  return ua ? ua.hasBeenActive : true
+}
+
 /** Two soft rising notes. Silently does nothing where WebAudio is unavailable or still locked. */
 function playChime(ctxRef: { current: AudioContext | null }) {
   try {
@@ -106,7 +112,7 @@ export function useTurnAlert(isMyTurn: boolean): { soundOn: boolean; toggleSound
   useEffect(() => {
     const prev = wasMyTurn.current
     wasMyTurn.current = isMyTurn
-    if (prev === null || prev || !isMyTurn) return
+    if (prev === null || prev || !isMyTurn || !hasUserGesture()) return
     try {
       if (typeof navigator.vibrate === 'function' && window.matchMedia('(pointer: coarse)').matches) navigator.vibrate([90, 60, 90])
     } catch {
