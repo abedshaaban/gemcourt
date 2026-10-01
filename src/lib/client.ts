@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameAction } from '~/game/types'
 import type { OpResult, RoomInfo, RoomOp, RoomView } from './protocol'
+import { HEARTBEAT_MS } from './protocol'
 
 // ---------- Session storage (per browser tab, so several tabs = several players) ----------
 
@@ -148,6 +149,21 @@ export function useRoom(code: string) {
       es.close()
     }
   }, [code, ready, session, retry])
+
+  // Heartbeat so the server notices a device that dropped off the network without closing the stream.
+  useEffect(() => {
+    if (!session) return
+    const beat = () => void apiOp(code, { op: 'heartbeat', token: session.token })
+    const timer = setInterval(beat, HEARTBEAT_MS)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') beat()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [code, session])
 
   const join = useCallback(
     async (name: string) => {

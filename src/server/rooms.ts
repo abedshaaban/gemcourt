@@ -13,6 +13,8 @@ interface Member {
   connections: number
   everConnected: boolean // has opened a live stream at least once
   offlineSince: number // ms timestamp of the last disconnect (meaningful when connections === 0)
+  lastSeen: number // ms timestamp of the last stream open / heartbeat / op from this member
+  stale: boolean // streams look open but no heartbeat for LIVENESS_MS (e.g. phone dropped off Wi-Fi)
 }
 
 interface Listener {
@@ -41,6 +43,8 @@ const MAX_ROOMS = 500
 export const AWAY_GRACE_MS = 5000
 /** How long the current player must be gone before anyone may skip their turn (matches the client's button). */
 export const SKIP_GRACE_MS = 8000
+/** A member whose streams look open but who sent no heartbeat for this long counts as offline (half-open TCP). */
+const LIVENESS_MS = 30_000
 
 // Keep state on globalThis so Vite's dev-server module reloads don't wipe running games.
 const store = ((globalThis as any).__splendorRooms ??= new Map<string, Room>()) as Map<string, Room>
@@ -54,6 +58,25 @@ if (!(globalThis as any).__splendorSweeper) {
     }
   }, 60 * 1000)
   ;(globalThis as any).__splendorSweeper.unref?.()
+}
+
+if (!(globalThis as any).__splendorLiveness) {
+  ;(globalThis as any).__splendorLiveness = setInterval(() => {
+    const now = Date.now()
+    for (const room of store.values()) {
+      let changed = false
+      for (const m of room.members) {
+        m.lastSeen ??= now // members created before a dev hot-reload
+        if (m.connections > 0 && !m.stale && now - m.lastSeen > LIVENESS_MS) {
+          m.stale = true
+          m.offlineSince = now
+          changed = true
+        }
+      }
+      if (changed) broadcast(room)
+    }
+  }, 5000)
+  ;(globalThis as any).__splendorLiveness.unref?.()
 }
 
 export function normalizeCode(code: string): string {
@@ -136,12 +159,23 @@ function memberByToken(room: Room, token: string | null | undefined): Member | u
   return room.members.find((m) => m.token === token)
 }
 
+/** Counts as present: has an open stream that isn't known to be dead. */
+const online = (m: Member) => m.connections > 0 && !m.stale
+
+/** Record activity from a member; if they had gone stale, they're back online right away. */
+function markSeen(room: Room, m: Member) {
+  m.lastSeen = Date.now()
+  if (!m.stale) return
+  m.stale = false
+  if (m.connections > 0) broadcast(room)
+}
+
 function viewFor(room: Room, token: string | null): RoomView {
   const me = memberByToken(room, token)
   const players: LobbyPlayer[] = room.members.map((m) => ({
     id: m.id,
     name: m.name,
-    connected: m.connections > 0,
+    connected: online(m),
     isHost: m.id === room.hostId,
   }))
   return {
@@ -172,12 +206,12 @@ function broadcast(room: Room) {
 
 function removeMember(room: Room, memberId: string) {
   room.members = room.members.filter((m) => m.id !== memberId)
-  if (room.hostId === memberId) room.hostId = (room.members.find((m) => m.connections > 0) ?? room.members[0])?.id ?? null
+  if (room.hostId === memberId) room.hostId = (room.members.find(online) ?? room.members[0])?.id ?? null
 }
 
 function awayLongEnough(m: Member | undefined, grace = AWAY_GRACE_MS, now = Date.now()): boolean {
   // `?? 0`: members created before a dev hot-reload may lack the field; treat them as long gone.
-  return !m || (m.connections === 0 && now - (m.offlineSince ?? 0) >= grace)
+  return !m || (!online(m) && now - (m.offlineSince ?? 0) >= grace)
 }
 
 /**
@@ -188,7 +222,7 @@ function hostError(room: Room, me: Member, what: string): string | null {
   if (room.hostId === me.id) return null
   const host = room.members.find((m) => m.id === room.hostId)
   if (awayLongEnough(host)) return null
-  return host && host.connections === 0
+  return host && !online(host)
     ? `${host.name} (host) just disconnected — try again in a few seconds`
     : `Only the host can ${what}`
 }
@@ -213,7 +247,10 @@ export function subscribe(rawCode: string, token: string | null, send: (view: Ro
     const m = memberByToken(room, token)
     if (m) {
       m.connections = Math.max(0, m.connections - 1)
-      if (m.connections === 0) m.offlineSince = Date.now()
+      if (m.connections === 0) {
+        if (!m.stale) m.offlineSince = Date.now() // a stale member already went offline earlier
+        m.stale = false
+      }
       broadcast(room)
     }
   }
@@ -223,6 +260,8 @@ export function subscribe(rawCode: string, token: string | null, send: (view: Ro
   if (member) {
     member.connections++
     member.everConnected = true
+    member.lastSeen = Date.now()
+    member.stale = false // reconnected: online again immediately
     broadcast(room) // presence changed; also delivers the initial view to this listener
   } else {
     send(viewFor(room, token))
@@ -247,7 +286,7 @@ export function performOp(rawCode: string, op: unknown): OpResult {
     if (offline) return { ok: true, playerId: offline.id, token: offline.token }
     if (room.status !== 'lobby') {
       const seat = room.members.find((m) => sameName(m.name, name))
-      if (seat && seat.connections === 0)
+      if (seat && !online(seat))
         return { ok: false, error: `${seat.name} only just disconnected — try again in a few seconds` }
       return { ok: false, error: seat ? `${seat.name} is still connected` : `No player named ${name} in this game` }
     }
@@ -261,6 +300,8 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       connections: 0,
       everConnected: false,
       offlineSince: Date.now(),
+      lastSeen: Date.now(),
+      stale: false,
     }
     room.members.push(member)
     room.hostId ??= member.id
@@ -270,8 +311,11 @@ export function performOp(rawCode: string, op: unknown): OpResult {
 
   const me = memberByToken(room, (op as { token?: string }).token)
   if (!me) return { ok: false, error: 'You are not in this room' }
+  markSeen(room, me)
 
   switch (op.op) {
+    case 'heartbeat':
+      return { ok: true }
     case 'rename': {
       if (room.status !== 'lobby') return { ok: false, error: 'Names are locked once the game starts' }
       const name = cleanName(op.name)
@@ -304,7 +348,7 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       if (err) return { ok: false, error: err }
       if (room.status !== 'lobby') return { ok: false, error: 'Game already started' }
       if (room.members.length < MIN_PLAYERS) return { ok: false, error: `Need at least ${MIN_PLAYERS} players` }
-      const away = room.members.filter((m) => m.connections === 0)
+      const away = room.members.filter((m) => !online(m))
       if (away.length)
         return { ok: false, error: `${away.map((m) => m.name).join(', ')} ${away.length === 1 ? 'is' : 'are'} offline — remove or wait` }
       takeHost(room, me)
@@ -329,7 +373,7 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       if (op.turn !== room.game.turn) return { ok: false, error: 'That turn is already over' }
       const current = room.game.players[room.game.currentPlayerIndex]
       const member = room.members.find((m) => m.id === current.id)
-      if (member && member.connections > 0) return { ok: false, error: `${current.name} is back online` }
+      if (member && online(member)) return { ok: false, error: `${current.name} is back online` }
       if (!awayLongEnough(member, SKIP_GRACE_MS)) return { ok: false, error: `Give ${current.name} a few seconds to reconnect` }
       room.game = skipTurn(room.game)
       broadcast(room)

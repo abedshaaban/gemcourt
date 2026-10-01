@@ -38,7 +38,10 @@ export type RoomOp =
   | { op: 'action'; token: string; action: GameAction }
   | { op: 'playAgain'; token: string }
   | { op: 'skipTurn'; token: string; turn: number } // turn guards against double skips
+  | { op: 'heartbeat'; token: string } // liveness: lets the server spot devices that vanished without closing
 
 export type OpResult = { ok: true; playerId?: string; token?: string } | { ok: false; error: string }
 
 export const NAME_MAX = 20
+/** How often a joined client sends a heartbeat (the server marks it offline after ~30s of silence). */
+export const HEARTBEAT_MS = 10_000
