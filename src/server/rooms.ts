@@ -18,6 +18,7 @@ interface Member {
 interface Listener {
   token: string | null
   send: (view: RoomView) => void
+  unsubscribe: () => void
 }
 
 interface Room {
@@ -157,13 +158,16 @@ function viewFor(room: Room, token: string | null): RoomView {
 function broadcast(room: Room) {
   room.version++
   room.lastActivity = Date.now()
+  const failed: Listener[] = []
   for (const l of room.listeners) {
     try {
       l.send(viewFor(room, l.token))
     } catch {
-      room.listeners.delete(l)
+      failed.push(l)
     }
   }
+  // Same path as a normal disconnect, so the member's connection count (presence) stays right.
+  for (const l of failed) l.unsubscribe()
 }
 
 function removeMember(room: Room, memberId: string) {
@@ -201,18 +205,8 @@ function isValidOp(op: unknown): op is RoomOp {
 export function subscribe(rawCode: string, token: string | null, send: (view: RoomView) => void): (() => void) | null {
   const room = store.get(normalizeCode(rawCode))
   if (!room) return null
-  const listener: Listener = { token, send }
-  room.listeners.add(listener)
-  const member = memberByToken(room, token)
-  if (member) {
-    member.connections++
-    member.everConnected = true
-    broadcast(room) // presence changed; also delivers the initial view to this listener
-  } else {
-    send(viewFor(room, token))
-  }
   let done = false
-  return () => {
+  const unsubscribe = () => {
     if (done) return
     done = true
     room.listeners.delete(listener)
@@ -223,6 +217,17 @@ export function subscribe(rawCode: string, token: string | null, send: (view: Ro
       broadcast(room)
     }
   }
+  const listener: Listener = { token, send, unsubscribe }
+  room.listeners.add(listener)
+  const member = memberByToken(room, token)
+  if (member) {
+    member.connections++
+    member.everConnected = true
+    broadcast(room) // presence changed; also delivers the initial view to this listener
+  } else {
+    send(viewFor(room, token))
+  }
+  return unsubscribe
 }
 
 export function performOp(rawCode: string, op: unknown): OpResult {
