@@ -49,14 +49,25 @@ export function JoinForm({ view, onJoin }: { view: RoomView; onJoin: (name: stri
           <h2>Take a seat</h2>
           <p className="sub">Choose the name other merchants will see.</p>
           <form className="stack" onSubmit={submit}>
-            <input
-              className="input"
-              placeholder="Your name"
-              autoFocus
-              value={name}
-              maxLength={NAME_MAX}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <div className="field">
+              <input
+                className="input"
+                placeholder="Your name"
+                aria-label="Your name"
+                aria-describedby="name-count"
+                autoFocus
+                value={name}
+                maxLength={NAME_MAX}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setError('')
+                }}
+              />
+              <span id="name-count" className={`field-count${name.length >= NAME_MAX ? ' is-max' : ''}`}>
+                {name.length >= NAME_MAX ? 'Max length · ' : ''}
+                {name.length}/{NAME_MAX}
+              </span>
+            </div>
             <button className="btn btn-primary" type="submit" disabled={busy}>
               {busy ? 'Joining…' : 'Join waiting room'}
             </button>

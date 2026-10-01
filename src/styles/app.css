@@ -500,3 +500,18 @@ a.btn {
   flex-wrap: wrap;
   font-size: 13px;
 }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field-count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.field-count.is-max {
+  color: var(--accent-strong);
+}
