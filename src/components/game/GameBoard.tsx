@@ -21,6 +21,7 @@ import { LogText } from './LogText'
 import { OpponentPanel, YourArea } from './PlayerPanels'
 import { RulesPanel } from './RulesPanel'
 import { GEM_NAME, GEM_PLURAL, ROMAN, avatarColor, cx, phaseVerb } from './ui'
+import { useTurnAlert } from './useTurnAlert'
 
 export interface GameBoardProps {
   state: PublicGameState
@@ -74,6 +75,7 @@ export function GameBoard({
   const playing = state.status === 'playing'
   const isMyTurn = playing && !!me && current?.id === me.id
   const canAct = isMyTurn && state.phase === 'action'
+  const { soundOn, toggleSound } = useTurnAlert(isMyTurn)
 
   const [selection, setSelectionState] = useState<GemColor[]>([])
   // mirror in a ref so rapid clicks never compute from a stale selection
@@ -369,6 +371,18 @@ export function GameBoard({
         </div>
 
         <div className="sp-topbar__actions">
+          {me && (
+            <button
+              type="button"
+              className={cx('sp-iconbtn sp-soundbtn', !soundOn && 'is-off')}
+              onClick={toggleSound}
+              aria-pressed={soundOn}
+              aria-label="Chime when it's your turn"
+              title={soundOn ? 'Turn chime on — click to mute' : 'Turn chime muted — click to turn on'}
+            >
+              ♪
+            </button>
+          )}
           <button
             type="button"
             className={cx('btn btn-sm', rulesOpen ? 'btn-primary' : 'btn-ghost')}

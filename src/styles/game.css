@@ -142,7 +142,27 @@
 .sp-topbar__actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 8px;
+}
+.sp-soundbtn {
+  position: relative;
+  font-size: 16px;
+}
+.sp-soundbtn.is-off {
+  color: var(--text-faint);
+}
+.sp-soundbtn.is-off::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 1.5px;
+  background: currentColor;
+  transform: rotate(-45deg);
+}
+.sp-soundbtn:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .sp-turn {
