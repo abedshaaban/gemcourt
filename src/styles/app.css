@@ -403,9 +403,24 @@ a {
   font-size: 22px;
 }
 
+.room-code__actions .btn {
+  white-space: nowrap;
+}
+
 @media (max-width: 480px) {
   .panel {
     padding: 20px;
+  }
+  /* Code on its own line, copy buttons share a full-width row underneath. */
+  .room-code {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+  .room-code__actions {
+    flex: 1 1 100%;
+  }
+  .room-code__actions .btn {
+    flex: 1;
   }
 }
 

@@ -72,7 +72,7 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
           <div className="label">Game code</div>
           <div className="code">{view.code}</div>
         </div>
-        <div className="row">
+        <div className="row room-code__actions">
           <button className="btn btn-sm" onClick={() => copy(view.code, 'code')}>
             {copied === 'code' ? 'Copied!' : 'Copy code'}
           </button>
