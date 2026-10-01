@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { GEM_COLORS, MAX_RESERVED, MAX_TOKENS, TOKEN_COLORS } from '../../game/types'
-import type { Card, Noble, PublicPlayer, Tier, TokenColor, TokenCounts } from '../../game/types'
+import type { Card, GemColor, Noble, PublicPlayer, Tier, TokenColor, TokenCounts } from '../../game/types'
 import { computePayment, emptyTokens, tokenTotal } from '../../game/helpers'
 import { CardBack, DevCard, NobleTile } from './Cards'
 import { Chip } from './Gem'
@@ -10,15 +10,30 @@ import { GEM_NAME, ROMAN, cx } from './ui'
 function PaymentLine({ me, card }: { me: PublicPlayer; card: Card }) {
   const pay = computePayment(me.tokens, me.bonuses, card.cost)
   if (!pay) {
-    let short = 0
-    for (const c of GEM_COLORS) short += Math.max(0, card.cost[c] - me.bonuses[c] - me.tokens[c])
-    short -= me.tokens.gold
+    // Per-color shortfall after bonuses and colored tokens; gold (wild) then covers part of the total.
+    const missing = GEM_COLORS.filter((c) => card.cost[c] - me.bonuses[c] - me.tokens[c] > 0)
+    const need = (c: GemColor) => card.cost[c] - me.bonuses[c] - me.tokens[c]
+    const short = missing.reduce((s, c) => s + need(c), 0) - me.tokens.gold
     return (
       <div className="sp-pay is-short">
         <span className="sp-pay__label">Can't afford</span>
         <span className="sp-pay__note">
           short by {short} gem{short === 1 ? '' : 's'}
         </span>
+        <span className="sp-pay__chips" aria-label={`Missing ${missing.map((c) => `${need(c)} ${GEM_NAME[c]}`).join(', ')}`}>
+          {missing.map((c) => (
+            <span key={c} className="sp-pay__item" title={`${need(c)} more ${GEM_NAME[c]}`}>
+              <Chip color={c} size="xs">
+                <span className="sp-chip__count">{need(c)}</span>
+              </Chip>
+            </span>
+          ))}
+        </span>
+        {me.tokens.gold > 0 && (
+          <span className="sp-pay__sub">
+            Missing per color — your {me.tokens.gold} gold is already counted in the total.
+          </span>
+        )}
       </div>
     )
   }
