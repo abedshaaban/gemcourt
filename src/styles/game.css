@@ -2053,10 +2053,18 @@
     padding: 10px 12px;
     grid-template-columns: minmax(0, 1fr) auto; /* let the round label give way to the action buttons */
   }
+  .sp-topbar__brand {
+    gap: 8px;
+  }
+  .sp-brand {
+    font-size: 19px;
+    letter-spacing: 0.1em;
+  }
   .sp-round {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 14px;
   }
   .sp-topbar__actions {
     gap: 6px;
