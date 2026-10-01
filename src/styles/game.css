@@ -2504,6 +2504,23 @@
     grid-column: 2;
     grid-row: 1;
   }
+  /* The sidebar never sets the page height: it takes the board column's height (height 0 + min-height 100%
+     of the grid area), and the chronicle flexes into whatever the rivals leave, scrolling inside. */
+  .sp-main {
+    align-items: stretch;
+  }
+  .sp-side {
+    height: 0;
+    min-height: 100%;
+  }
+  .sp-log {
+    flex: 1 1 0;
+    min-height: 120px;
+  }
+  .sp-log__list {
+    min-height: 0;
+    max-height: none;
+  }
 }
 @media (min-width: 1241px) and (max-height: 820px) {
   .sp-table {
