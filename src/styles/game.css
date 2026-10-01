@@ -2344,6 +2344,9 @@
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
   }
+  .sp-mybar__tokens.sp-warn {
+    color: var(--danger);
+  }
   /* zero counts stay readable here: it's my own tally */
   .sp-mybar .sp-holdings--sm .sp-chip.is-zero,
   .sp-mybar .sp-holdings--sm .sp-bonus.is-zero {
