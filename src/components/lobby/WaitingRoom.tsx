@@ -21,6 +21,8 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
   const [nameDraft, setNameDraft] = useState(me?.name ?? '')
   const [copied, setCopied] = useState<'code' | 'link' | 'failed' | null>(null)
   const [lanUrls, setLanUrls] = useState<string[]>([])
+  const [confirmKick, setConfirmKick] = useState<string | null>(null)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
@@ -132,15 +134,36 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
                 </button>
               </>
             )}
-            {isHost && p.id !== view.youId && (
-              <button
-                className="btn btn-sm btn-ghost"
-                disabled={busy}
-                aria-label={`Remove ${p.name}`}
-                onClick={() => run((token) => ({ op: 'kick', token, playerId: p.id }))}
-              >
-                Remove
-              </button>
+            {isHost && p.id !== view.youId && confirmKick === p.id ? (
+              <span className="row confirm-inline" role="group" aria-label={`Remove ${p.name}?`}>
+                <span className="muted">Remove?</span>
+                <button
+                  className="btn btn-sm btn-danger"
+                  disabled={busy}
+                  autoFocus
+                  onClick={async () => {
+                    await run((token) => ({ op: 'kick', token, playerId: p.id }))
+                    setConfirmKick(null)
+                  }}
+                >
+                  Yes
+                </button>
+                <button className="btn btn-sm btn-ghost" onClick={() => setConfirmKick(null)}>
+                  No
+                </button>
+              </span>
+            ) : (
+              isHost &&
+              p.id !== view.youId && (
+                <button
+                  className="btn btn-sm btn-ghost"
+                  disabled={busy}
+                  aria-label={`Remove ${p.name}`}
+                  onClick={() => setConfirmKick(p.id)}
+                >
+                  Remove
+                </button>
+              )
             )}
             <span className={`status-dot${p.connected ? '' : ' off'}`} title={p.connected ? 'Online' : 'Offline'} />
           </li>
@@ -153,9 +176,26 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
       </ul>
 
       <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <button className="btn btn-ghost" onClick={onLeave} disabled={busy}>
-          Leave
-        </button>
+        {confirmLeave ? (
+          <span className="row confirm-inline" role="group" aria-label="Leave the room?">
+            <span className="muted">{me?.isHost && view.players.length > 1 ? 'Leave? Hosting passes to another player.' : 'Leave the room?'}</span>
+            <button className="btn btn-sm btn-danger" autoFocus onClick={onLeave} disabled={busy}>
+              Leave
+            </button>
+            <button className="btn btn-sm btn-ghost" onClick={() => setConfirmLeave(false)}>
+              Stay
+            </button>
+          </span>
+        ) : (
+          <button
+            className="btn btn-ghost"
+            // Alone in the room there is nothing to lose, so skip the confirmation.
+            onClick={() => (isHost || view.players.length > 1 ? setConfirmLeave(true) : onLeave())}
+            disabled={busy}
+          >
+            Leave
+          </button>
+        )}
         {isHost ? (
           <button
             className="btn btn-primary"

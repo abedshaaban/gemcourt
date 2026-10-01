@@ -459,3 +459,18 @@ a.btn {
     font-size: 13px;
   }
 }
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: #ff8a8a;
+}
+.btn-danger:hover:not(:disabled) {
+  background: rgba(226, 90, 90, 0.15);
+}
+/* Inline "Remove? Yes / No" style confirmations in the waiting room. */
+.confirm-inline {
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
