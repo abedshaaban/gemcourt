@@ -19,7 +19,7 @@ import { GameLog } from './GameLog'
 import { GameOver } from './GameOver'
 import { OpponentPanel, YourArea } from './PlayerPanels'
 import { RulesPanel } from './RulesPanel'
-import { GEM_NAME, ROMAN, cx, phaseVerb } from './ui'
+import { GEM_NAME, GEM_PLURAL, ROMAN, cx, phaseVerb } from './ui'
 
 export interface GameBoardProps {
   state: PublicGameState
@@ -46,7 +46,7 @@ function nextSelection(sel: GemColor[], color: GemColor, bank: TokenCounts): { s
     if (isDouble) return { sel: [] }
     if (sel.length === 1) {
       if (bank[color] >= 4) return { sel: [color, color] }
-      return { sel: [], hint: `Taking two ${GEM_NAME[color]} needs at least 4 in the pile.` }
+      return { sel: [], hint: `Taking two ${GEM_PLURAL[color]} needs at least 4 in the pile.` }
     }
     return { sel: sel.filter((c) => c !== color) }
   }
@@ -180,8 +180,8 @@ export function GameBoard({
         : requiredDifferent === 0
           ? 'The bank has no gems left.'
           : `Only ${requiredDifferent} color${requiredDifferent === 1 ? '' : 's'} left — take one of each.`
-  else if (isDouble) trayHint = `Two ${GEM_NAME[selection[0]]}.`
-  else if (canConfirmTake) trayHint = 'Ready.'
+  else if (isDouble) trayHint = `Two ${GEM_PLURAL[selection[0]]}.`
+  else if (canConfirmTake) trayHint = 'Ready — press Take gems.'
   else if (selection.length === 1 && state.bank[selection[0]] >= 4)
     trayHint = `Add ${requiredDifferent - selection.length} more color${requiredDifferent - selection.length === 1 ? '' : 's'}, or click ${GEM_NAME[selection[0]]} again for two.`
   else trayHint = `Pick ${requiredDifferent - selection.length} more color${requiredDifferent - selection.length === 1 ? '' : 's'}.`

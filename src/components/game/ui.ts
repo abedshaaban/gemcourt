@@ -9,6 +9,16 @@ export const GEM_NAME: Record<TokenColor, string> = {
   gold: 'Gold',
 }
 
+/** Lowercase plurals for running copy ("two rubies"). */
+export const GEM_PLURAL: Record<TokenColor, string> = {
+  white: 'diamonds',
+  blue: 'sapphires',
+  green: 'emeralds',
+  red: 'rubies',
+  black: 'onyx',
+  gold: 'gold',
+}
+
 export const ROMAN: Record<Tier, string> = { 1: 'I', 2: 'II', 3: 'III' }
 
 export const AVATAR_COLORS = ['#a8457f', '#2d8a95', '#c0712a', '#6656c4', '#4f8a3c', '#b8455a']
