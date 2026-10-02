@@ -1,3 +1,4 @@
+import { Minus, Plus } from 'lucide-react'
 import { GEM_COLORS } from '~/game/types'
 
 // Same palette as the board, indexed by join order, so each player keeps one color everywhere.
@@ -20,7 +21,11 @@ export function Brand({ tagline = 'A game of Renaissance gem merchants' }: { tag
 export function QuickRules() {
   return (
     <details className="rules-box">
-      <summary>How to play</summary>
+      <summary>
+        <span>How to play</span>
+        <Plus className="rules-box__expand" size={16} aria-hidden="true" />
+        <Minus className="rules-box__collapse" size={16} aria-hidden="true" />
+      </summary>
       <ul>
         <li>2–6 players. On your turn do exactly one action:</li>
         <li>

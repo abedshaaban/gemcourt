@@ -715,7 +715,7 @@ export function GameBoard({
       <aside id="sp-rules-drawer" className={cx('sp-drawer', rulesOpen && 'is-open')} aria-label="Rules" aria-hidden={!rulesOpen} inert={!rulesOpen}>
         <header className="sp-drawer__head">
           <h2 className="sp-drawer__title">Rules of Splendor</h2>
-          <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setRulesOpen(false)} aria-label="Close rules"><X size={16} aria-hidden="true" /></button>
+          <button type="button" className="sp-iconbtn" onClick={() => setRulesOpen(false)} aria-label="Close rules"><X size={16} aria-hidden="true" /></button>
         </header>
         <div className="sp-drawer__body">
           <RulesPanel />
@@ -804,7 +804,7 @@ export function GameBoard({
             {toast.kind === 'noble' ? <Crown size={16} aria-hidden="true" /> : <CircleAlert size={16} aria-hidden="true" />}
           </span>
           <span className="sp-toast__msg">{toast.message}</span>
-          <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setToast(null)} aria-label="Dismiss"><X size={16} aria-hidden="true" /></button>
+          <button type="button" className="sp-iconbtn" onClick={() => setToast(null)} aria-label="Dismiss"><X size={16} aria-hidden="true" /></button>
         </div>
       )}
     </div>

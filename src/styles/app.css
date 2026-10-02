@@ -408,10 +408,32 @@ a {
   color: var(--text-muted);
 }
 .rules-box summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   color: var(--text);
   font-family: var(--font-display);
   letter-spacing: 0.08em;
+  list-style: none;
+}
+.rules-box summary::-webkit-details-marker {
+  display: none;
+}
+.rules-box__expand,
+.rules-box__collapse {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--accent-strong);
+}
+.rules-box__collapse {
+  display: none;
+}
+.rules-box[open] .rules-box__expand {
+  display: none;
+}
+.rules-box[open] .rules-box__collapse {
+  display: block;
 }
 .rules-box ul {
   padding-left: 20px;

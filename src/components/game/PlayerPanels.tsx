@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { useId, useState } from 'react'
 import { MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
 import type { PublicPlayer, ReservedCard, TurnPhase } from '../../game/types'
@@ -86,7 +87,7 @@ export function OpponentPanel({
           </span>
         </span>
         <PointsCrest points={player.points} size="sm" />
-        <span className="sp-opp__chev" aria-hidden="true" />
+        <ChevronDown className="sp-opp__chev" size={16} aria-hidden="true" />
       </button>
       <div className="sp-opp__body" id={bodyId}>
         <header className="sp-opp__head">

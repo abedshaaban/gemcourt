@@ -151,7 +151,6 @@
 }
 .sp-soundbtn {
   position: relative;
-  font-size: 16px;
 }
 .sp-soundbtn.is-off {
   color: var(--text-faint);
@@ -1871,7 +1870,8 @@
 .sp-rank__crown {
   color: var(--accent-strong);
   font-size: 22px;
-  text-shadow: 0 0 10px rgba(240, 198, 90, 0.6);
+  line-height: 1;
+  filter: drop-shadow(0 0 10px rgba(240, 198, 90, 0.6));
 }
 .sp-rank__who {
   display: flex;
@@ -1970,8 +1970,6 @@
   border-radius: 50%;
   background: var(--danger);
   color: #fff;
-  font-weight: 800;
-  font-size: 13px;
 }
 .sp-toast__msg {
   flex: 1;
@@ -2331,17 +2329,13 @@
     white-space: nowrap;
   }
   .sp-opp__chev {
-    width: 8px;
-    height: 8px;
     flex-shrink: 0;
-    margin: 0 4px 4px 2px;
-    border-right: 2px solid var(--text-faint);
-    border-bottom: 2px solid var(--text-faint);
-    transform: rotate(45deg);
+    margin-right: 2px;
+    color: var(--text-faint);
     transition: transform 0.2s;
   }
   .sp-opp.is-open .sp-opp__chev {
-    transform: translateY(3px) rotate(-135deg);
+    transform: rotate(180deg);
   }
   .sp-opp__body {
     display: none;

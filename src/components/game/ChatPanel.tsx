@@ -251,7 +251,7 @@ export function SideFeed({
             aria-expanded={sheetOpen}
             aria-label={unread > 0 ? `Chat, ${unread} unread` : 'Chat'}
           >
-            <MessageCircle size={22} aria-hidden="true" />
+            {sheetOpen ? <X size={22} aria-hidden="true" /> : <MessageCircle size={22} aria-hidden="true" />}
             <UnreadBadge count={unread} />
           </button>
           {sheetOpen && (
@@ -262,7 +262,7 @@ export function SideFeed({
                   header={
                     <header className="sp-chat-sheet__head">
                       <h3 className="sp-section-title">Table talk</h3>
-                      <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setSheetOpen(false)} aria-label="Close chat"><X size={16} aria-hidden="true" /></button>
+                      <button type="button" className="sp-iconbtn" onClick={() => setSheetOpen(false)} aria-label="Close chat"><X size={16} aria-hidden="true" /></button>
                     </header>
                   }
                   messages={chat.messages}
