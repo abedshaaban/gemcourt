@@ -156,6 +156,9 @@ export function GameBoard({
   const pendingRef = useRef(false)
   const [toast, setToast] = useState<{ id: number; message: string; kind?: 'noble' } | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [tutorialStep, setTutorialStep] = useState<number>(() => {
+    try { return localStorage.getItem('splendor-tutorial-done') ? -1 : 0 } catch { return -1 }
+  })
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [resultsHidden, setResultsHidden] = useState(false)
 
@@ -373,6 +376,25 @@ export function GameBoard({
     (nobleNeeded && pendingNobles.length > 0) ||
     (state.status === 'finished' && !resultsHidden)
 
+  const tutorialSteps = [
+    { selector: '.sp-market', title: 'The card market', body: 'Choose a face-up card to buy, or reserve it for later. The gem icons show its cost; your permanent bonuses reduce that cost.' },
+    { selector: '.sp-bankcol', title: 'Collect gems', body: 'Take up to three different gems, or two of one color when at least four remain in the bank.' },
+    { selector: '.sp-nobles', title: 'Earn noble visits', body: 'Build the matching color bonuses to attract a noble. Each noble is worth 3 points.' },
+    { selector: '.sp-you', title: 'Your collection', body: `Purchased cards give permanent discounts. Reach ${state.winningPoints} points to trigger the final round.` },
+  ]
+  useEffect(() => {
+    document.querySelectorAll('.sp-tutorial-focus').forEach((el) => el.classList.remove('sp-tutorial-focus'))
+    if (tutorialStep < 0) return
+    const target = document.querySelector(tutorialSteps[tutorialStep]?.selector ?? '')
+    target?.classList.add('sp-tutorial-focus')
+    target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center', inline: 'nearest' })
+    return () => target?.classList.remove('sp-tutorial-focus')
+  }, [tutorialStep, state.winningPoints])
+  const closeTutorial = () => {
+    setTutorialStep(-1)
+    try { localStorage.setItem('splendor-tutorial-done', '1') } catch { /* storage may be disabled */ }
+  }
+
   // Phone: when my turn starts, bring the table (market, bank, tray) into view under the sticky top bar —
   // unless an overlay is up or the user is scrolling themselves.
   const tableRef = useRef<HTMLElement>(null)
@@ -497,6 +519,7 @@ export function GameBoard({
           >
             Rules
           </button>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTutorialStep(0)}>Tour</button>
           <button type="button" className="btn btn-sm" onClick={() => (playing && me ? setConfirmLeave(true) : onLeave())}>
             Leave
           </button>
@@ -514,7 +537,7 @@ export function GameBoard({
               <strong>Final round</strong> —{' '}
               {finalTrigger
                 ? `${me && finalTrigger.name === me.name ? 'You' : finalTrigger.name} reached ${finalTrigger.points}`
-                : 'a merchant reached 15'}
+                : `a merchant reached ${state.winningPoints}`}
               <span className="sp-final__pts"> prestige</span>
               {' · '}
               {turnsLeft.length === 1 ? 'last turn' : `${turnsLeft.length} turns left`}
@@ -652,6 +675,21 @@ export function GameBoard({
           <SideFeed log={state.log} players={state.players} colorIndex={colorIndex} youId={youId} chat={chat} />
         </aside>
       </div>
+
+      {tutorialStep >= 0 && (
+        <aside className="sp-tutorial" role="dialog" aria-modal="false" aria-labelledby="sp-tutorial-title">
+          <div className="sp-tutorial__progress">Game tour · {tutorialStep + 1} of {tutorialSteps.length}</div>
+          <h2 id="sp-tutorial-title">{tutorialSteps[tutorialStep].title}</h2>
+          <p>{tutorialSteps[tutorialStep].body}</p>
+          <div className="sp-tutorial__actions">
+            <button type="button" className="btn btn-sm btn-ghost" onClick={closeTutorial}>Skip tour</button>
+            {tutorialStep > 0 && <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTutorialStep((n) => n - 1)}>Back</button>}
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => tutorialStep === tutorialSteps.length - 1 ? closeTutorial() : setTutorialStep((n) => n + 1)}>
+              {tutorialStep === tutorialSteps.length - 1 ? 'Done' : 'Next'}
+            </button>
+          </div>
+        </aside>
+      )}
 
       {me && playing && <MyBar player={me} isTurn={isMyTurn} />}
 

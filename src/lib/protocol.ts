@@ -14,6 +14,7 @@ export interface RoomView {
   code: string
   status: RoomStatus
   hostId: string | null
+  winningPoints: number
   players: LobbyPlayer[]
   youId: string | null // null = not a member (spectator / needs to join)
   game: PublicGameState | null
@@ -45,6 +46,7 @@ export type RoomOp =
   | { op: 'leave'; token: string }
   | { op: 'kick'; token: string; playerId: string }
   | { op: 'start'; token: string }
+  | { op: 'setWinningPoints'; token: string; points: number }
   | { op: 'action'; token: string; action: GameAction }
   | { op: 'playAgain'; token: string }
   | { op: 'skipTurn'; token: string; turn: number } // turn guards against double skips

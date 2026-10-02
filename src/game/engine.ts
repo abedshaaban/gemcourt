@@ -97,7 +97,7 @@ const fail = (error: string): Err => ({ ok: false, error })
 
 // ---------- setup ----------
 
-export function createGame(players: { id: string; name: string }[], rng: () => number = Math.random): GameState {
+export function createGame(players: { id: string; name: string }[], rng: () => number = Math.random, winningPoints = WINNING_POINTS): GameState {
   if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
     throw new Error(`Splendor needs ${MIN_PLAYERS}-${MAX_PLAYERS} players`)
   }
@@ -122,6 +122,7 @@ export function createGame(players: { id: string; name: string }[], rng: () => n
   bank.gold = 5
 
   const state: GameState = {
+    winningPoints: [12, 15, 18].includes(winningPoints) ? winningPoints : WINNING_POINTS,
     players: players.map((p) => ({
       id: p.id,
       name: p.name,
@@ -402,7 +403,7 @@ function endTurn(s: GameState, player: PlayerState): void {
   s.phase = 'action'
   s.pendingNobleIds = []
 
-  if (!s.finalRound && playerPoints(player) >= WINNING_POINTS) {
+  if (!s.finalRound && playerPoints(player) >= s.winningPoints) {
     s.finalRound = true
     addLog(s, null, `${player.name} reached ${playerPoints(player)} points. Final round!`)
   }
@@ -451,6 +452,7 @@ export function toPublicState(state: GameState, viewerId: string | null): Public
     nobles: structuredClone(p.nobles),
   }))
   return {
+    winningPoints: state.winningPoints,
     players,
     currentPlayerIndex: state.currentPlayerIndex,
     bank: { ...state.bank },

@@ -61,6 +61,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
+  winningPoints: number
   players: PlayerState[] // in turn order; index 0 is the first player
   currentPlayerIndex: number
   bank: TokenCounts
@@ -126,6 +127,7 @@ export interface PublicPlayer {
 }
 
 export interface PublicGameState {
+  winningPoints: number
   players: PublicPlayer[]
   currentPlayerIndex: number
   bank: TokenCounts

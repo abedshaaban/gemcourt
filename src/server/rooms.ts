@@ -28,6 +28,7 @@ interface Room {
   code: string
   members: Member[]
   hostId: string | null
+  winningPoints: number
   status: RoomStatus
   game: GameState | null
   listeners: Set<Listener>
@@ -144,6 +145,7 @@ export function createRoom(): string | null {
     code,
     members: [],
     hostId: null,
+    winningPoints: 15,
     status: 'lobby',
     game: null,
     listeners: new Set(),
@@ -206,6 +208,7 @@ function viewFor(room: Room, token: string | null): RoomView {
     code: room.code,
     status: room.status,
     hostId: room.hostId,
+    winningPoints: room.winningPoints ?? 15,
     players,
     youId: me?.id ?? null,
     game: room.game ? toPublicState(room.game, me?.id ?? null) : null,
@@ -397,8 +400,18 @@ export function performOp(rawCode: string, op: unknown): OpResult {
         return { ok: false, error: `${away.map((m) => m.name).join(', ')} ${away.length === 1 ? 'is' : 'are'} offline — remove or wait` }
       takeHost(room, me)
       const seating = shuffle(room.members).map((m) => ({ id: m.id, name: m.name }))
-      room.game = createGame(seating)
+      room.game = createGame(seating, Math.random, room.winningPoints ?? 15)
       room.status = 'playing'
+      broadcast(room)
+      return { ok: true }
+    }
+    case 'setWinningPoints': {
+      const err = hostError(room, me, 'change the game length')
+      if (err) return { ok: false, error: err }
+      if (room.status !== 'lobby') return { ok: false, error: 'Game length can only be changed before the game starts' }
+      if (![12, 15, 18].includes(op.points)) return { ok: false, error: 'Choose 12, 15, or 18 points' }
+      takeHost(room, me)
+      room.winningPoints = op.points
       broadcast(room)
       return { ok: true }
     }

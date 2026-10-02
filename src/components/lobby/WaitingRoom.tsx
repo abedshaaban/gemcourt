@@ -228,6 +228,19 @@ export function WaitingRoom({ view, op, canHost, onLeave }: Props) {
           <span className="muted">Waiting for {host?.name ?? 'the host'} to start…</span>
         )}
       </div>
+      <div className="sp-length" aria-label="Game length">
+        <span className="muted">Game length</span>
+        <div className="sp-length__choices" role="group" aria-label="Choose winning score">
+          {([12, 15, 18] as const).map((points) => (
+            <button key={points} type="button" className={`btn btn-sm${view.winningPoints === points ? ' btn-primary' : ' btn-ghost'}`}
+              aria-pressed={view.winningPoints === points} disabled={!isHost || busy}
+              onClick={() => void run((token) => ({ op: 'setWinningPoints', token, points }))}>
+              {points === 12 ? 'Quick · 12' : points === 18 ? 'Long · 18' : 'Classic · 15'}
+            </button>
+          ))}
+        </div>
+        {!isHost && <span className="muted">Host chose {view.winningPoints} points</span>}
+      </div>
       {isHost && offline.length > 0 && (
         <p className="muted" role="status" style={{ fontSize: 13, margin: '10px 0 0' }}>
           Can't start while {offline.map((p) => (p.isHost ? `${p.name} (previous host)` : p.name)).join(', ')}{' '}
