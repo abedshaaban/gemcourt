@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { PublicGameState } from '../../game/types'
 import { Avatar } from './PlayerPanels'
-import { cx } from './ui'
+import { LogText } from './LogText'
+import { avatarColor, cx } from './ui'
 
 export function GameOver({
   state,
@@ -108,6 +109,29 @@ export function GameOver({
         {tieBroken && (
           <p className="sp-over__tiebreak">Tied on points — the tie went to the fewest development cards.</p>
         )}
+
+        <details className="sp-history">
+          <summary className="sp-history__summary">
+            <span>Game history</span>
+            <span className="sp-history__count">{state.log.length} recorded events</span>
+          </summary>
+          <ol className="sp-history__list" aria-label="Game history, oldest event first">
+            {state.log.map((entry, index) => {
+              const playerIndex = entry.playerId
+                ? (colorIndex?.[entry.playerId] ?? state.players.findIndex((p) => p.id === entry.playerId))
+                : -1
+              return (
+                <li className="sp-history__entry" key={entry.id}>
+                  <span className="sp-history__number" aria-label={`Event ${index + 1}`}>{index + 1}</span>
+                  <span className="sp-history__mark" style={{ background: playerIndex >= 0 ? avatarColor(playerIndex) : 'var(--accent)' }} aria-hidden="true" />
+                  <span className="sp-history__text">
+                    <LogText message={entry.message} names={state.players.map((p) => p.name)} />
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        </details>
 
         <div className="sp-over__actions">
           {isHost ? (

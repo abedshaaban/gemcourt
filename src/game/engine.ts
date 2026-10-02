@@ -29,8 +29,6 @@ import type {
   VisibleReserved,
 } from './types'
 
-export const MAX_LOG_ENTRIES = 100
-
 // ---------- small utilities ----------
 
 /** In-place Fisher-Yates shuffle using the given rng (returns the same array). */
@@ -52,7 +50,6 @@ export function gemsPerPile(playerCount: number): number {
 function addLog(state: GameState, playerId: string | null, message: string): void {
   const last = state.log[state.log.length - 1]
   state.log.push({ id: (last?.id ?? 0) + 1, playerId, message })
-  if (state.log.length > MAX_LOG_ENTRIES) state.log.splice(0, state.log.length - MAX_LOG_ENTRIES)
 }
 
 function isGemColor(c: unknown): c is GemColor {
