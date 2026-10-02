@@ -688,14 +688,15 @@ describe('final round and winner', () => {
 // ---------- log ----------
 
 describe('log', () => {
-  it('keeps the last 100 entries with monotonic ids', () => {
+  it('keeps the full history (no cap) with monotonic ids', () => {
     const s = newGame()
     s.log = Array.from({ length: 100 }, (_, i) => ({ id: i + 1, playerId: null, message: `m${i}` }))
     const n = ok(act(s, 'alice', take3))
-    expect(n.log).toHaveLength(100)
-    expect(n.log[99].id).toBe(101)
-    expect(n.log[0].id).toBe(2)
-    for (let i = 1; i < n.log.length; i++) expect(n.log[i].id).toBeGreaterThan(n.log[i - 1].id)
+    expect(n.log.length).toBeGreaterThan(100)
+    expect(n.log[0].id).toBe(1)
+    expect(n.log[0].message).toBe('m0')
+    expect(n.log[100].id).toBe(101)
+    for (let i = 0; i < n.log.length; i++) expect(n.log[i].id).toBe(i + 1)
   })
 })
 
