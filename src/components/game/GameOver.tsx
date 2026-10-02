@@ -1,3 +1,4 @@
+import { Crown, Minus, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import type { PublicGameState } from '../../game/types'
 import { Avatar } from './PlayerPanels'
@@ -65,7 +66,7 @@ export function GameOver({
     >
       <div className="sp-over__card">
         <div className="sp-over__crown" aria-hidden="true">
-          ♛
+          <Crown size="1em" aria-hidden="true" />
         </div>
         <h2 id="sp-over-title" className="sp-over__title">
           {youWon ? 'Victory' : 'The Game Is Done'}
@@ -83,7 +84,7 @@ export function GameOver({
             const won = winners.has(p.id)
             return (
               <li key={p.id} className={cx('sp-rank__row', won && 'is-winner', p.id === youId && 'is-you')}>
-                <span className="sp-rank__place">{won ? <span className="sp-rank__crown">♛</span> : places[k]}</span>
+                <span className="sp-rank__place">{won ? <span className="sp-rank__crown"><Crown size="1em" aria-hidden="true" /></span> : places[k]}</span>
                 <Avatar name={p.name} index={colorIndex?.[p.id] ?? i} size={34} />
                 <span className="sp-rank__who">
                   <span className="sp-rank__name">
@@ -117,6 +118,8 @@ export function GameOver({
           <summary className="sp-history__summary">
             <span>Game history</span>
             <span className="sp-history__count">{state.log.length} recorded events</span>
+            <Plus className="sp-history__expand" size={16} aria-hidden="true" />
+            <Minus className="sp-history__collapse" size={16} aria-hidden="true" />
           </summary>
           <ol className="sp-history__list" aria-label="Game history, oldest event first">
             {state.log.map((entry, index) => {

@@ -1,3 +1,4 @@
+import { Bell, BellOff, CircleAlert, Crown, Sparkle, X } from 'lucide-react'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, JSX } from 'react'
 import { GEM_COLORS, MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
@@ -516,7 +517,7 @@ export function GameBoard({
               aria-label="Chime when it's your turn"
               title={soundOn ? 'Turn chime on — click to mute' : 'Turn chime muted — click to turn on'}
             >
-              ♪
+              {soundOn ? <Bell size={16} aria-hidden="true" /> : <BellOff size={16} aria-hidden="true" />}
             </button>
           )}
           <button
@@ -540,7 +541,7 @@ export function GameBoard({
         <div className="sp-final-slot">
           <div className="sp-final" role="status">
             <span className="sp-final__ornament" aria-hidden="true">
-              ✦
+              <Sparkle size="1em" aria-hidden="true" />
             </span>
             <span className="sp-ellipsis">
               <strong>Final round</strong> —{' '}
@@ -556,7 +557,7 @@ export function GameBoard({
               </span>
             </span>
             <span className="sp-final__ornament" aria-hidden="true">
-              ✦
+              <Sparkle size="1em" aria-hidden="true" />
             </span>
           </div>
         </div>
@@ -714,9 +715,7 @@ export function GameBoard({
       <aside id="sp-rules-drawer" className={cx('sp-drawer', rulesOpen && 'is-open')} aria-label="Rules" aria-hidden={!rulesOpen} inert={!rulesOpen}>
         <header className="sp-drawer__head">
           <h2 className="sp-drawer__title">Rules of Splendor</h2>
-          <button type="button" className="sp-iconbtn" onClick={() => setRulesOpen(false)} aria-label="Close rules">
-            ×
-          </button>
+          <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setRulesOpen(false)} aria-label="Close rules"><X size={16} aria-hidden="true" /></button>
         </header>
         <div className="sp-drawer__body">
           <RulesPanel />
@@ -785,7 +784,7 @@ export function GameBoard({
       {state.status === 'finished' &&
         (resultsHidden ? (
           <button type="button" className="btn btn-primary sp-results-fab" onClick={() => setResultsHidden(false)}>
-            ♛ Show results
+            <Crown size="1em" aria-hidden="true" /> Show results
           </button>
         ) : (
           <GameOver
@@ -802,12 +801,10 @@ export function GameBoard({
       {toast && (
         <div className={cx('sp-toast', toast.kind === 'noble' && 'sp-toast--noble')} role={toast.kind ? 'status' : 'alert'} key={toast.id}>
           <span className="sp-toast__icon" aria-hidden="true">
-            {toast.kind === 'noble' ? '♛' : '!'}
+            {toast.kind === 'noble' ? <Crown size={16} aria-hidden="true" /> : <CircleAlert size={16} aria-hidden="true" />}
           </span>
           <span className="sp-toast__msg">{toast.message}</span>
-          <button type="button" className="sp-iconbtn" onClick={() => setToast(null)} aria-label="Dismiss">
-            ×
-          </button>
+          <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setToast(null)} aria-label="Dismiss"><X size={16} aria-hidden="true" /></button>
         </div>
       )}
     </div>

@@ -15,6 +15,7 @@
     "@tanstack/react-router": "^1.170.39",
     "@tanstack/react-start": "^1.168.58",
     "cloudflared": "^0.7.3",
+    "lucide-react": "^1.50.0",
     "nanoid": "^6.0.1",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",

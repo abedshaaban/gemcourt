@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from './ui'
@@ -94,9 +95,7 @@ export function Modal({
             {subtitle && <p className="sp-modal__sub">{subtitle}</p>}
           </div>
           {onClose && (
-            <button type="button" className="sp-iconbtn" onClick={onClose} aria-label="Close">
-              ×
-            </button>
+            <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={onClose} aria-label="Close"><X size={16} aria-hidden="true" /></button>
           )}
         </header>
         {children && <div className="sp-modal__body">{children}</div>}

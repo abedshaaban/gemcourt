@@ -1,3 +1,4 @@
+import { MessageCircle, X } from 'lucide-react'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { JSX, ReactNode } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
@@ -250,7 +251,7 @@ export function SideFeed({
             aria-expanded={sheetOpen}
             aria-label={unread > 0 ? `Chat, ${unread} unread` : 'Chat'}
           >
-            <span aria-hidden="true">✉</span>
+            <MessageCircle size={22} aria-hidden="true" />
             <UnreadBadge count={unread} />
           </button>
           {sheetOpen && (
@@ -261,9 +262,7 @@ export function SideFeed({
                   header={
                     <header className="sp-chat-sheet__head">
                       <h3 className="sp-section-title">Table talk</h3>
-                      <button type="button" className="sp-iconbtn" onClick={() => setSheetOpen(false)} aria-label="Close chat">
-                        ×
-                      </button>
+                      <button type="button" className="sp-iconbtn sp-iconbtn--close" onClick={() => setSheetOpen(false)} aria-label="Close chat"><X size={16} aria-hidden="true" /></button>
                     </header>
                   }
                   messages={chat.messages}
