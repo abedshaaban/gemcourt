@@ -6,7 +6,9 @@ import { CHAT_BURST, CHAT_HISTORY, CHAT_WINDOW_MS, cleanChatText, createRoom, pe
 // ---------- helpers ----------
 
 function setup(names = ['Alice', 'Bob']) {
-  const code = createRoom()!
+  const room = createRoom()
+  if (!room.ok) throw new Error(room.error)
+  const code = room.code
   const tokens = names.map((name) => {
     const r = performOp(code, { op: 'join', name })
     if (!r.ok || !r.token) throw new Error(`join failed for ${name}`)

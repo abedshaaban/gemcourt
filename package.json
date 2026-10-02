@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite dev",
     "play": "vite build && vite preview",
+    "play:online": "vite build && vite preview --mode online",
     "build": "vite build",
     "start": "vite preview",
     "test": "vitest run",
@@ -13,10 +14,13 @@
   "dependencies": {
     "@tanstack/react-router": "^1.170.39",
     "@tanstack/react-start": "^1.168.58",
+    "cloudflared": "^0.7.3",
+    "nanoid": "^6.0.1",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "three": "^0.186.1"
+    "three": "^0.186.1",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -24,9 +28,15 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "cloudflared"
+    ]
   }
 }

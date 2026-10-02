@@ -565,7 +565,12 @@ export function GameBoard({
       <div className="sp-main" inert={overlayOpen}>
         <div className="sp-left">
           {/* ---------- table ---------- */}
-          <section className="sp-table" aria-label="Table" ref={tableRef}>
+          {/* 5–6 players deal 6–7 nobles: on desktop they stand in two columns (see game.css). */}
+          <section
+            className={cx('sp-table', state.players.length >= 5 && 'sp-table--many-nobles')}
+            aria-label="Table"
+            ref={tableRef}
+          >
             <Suspense fallback={null}>
               <LazyTableBoard3D />
             </Suspense>

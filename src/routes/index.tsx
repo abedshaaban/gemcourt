@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Brand, QuickRules } from '~/components/lobby/common'
 import { apiCreateRoom, apiRoomInfo } from '~/lib/client'
+import { CODE_LENGTH, normalizeCode } from '~/lib/protocol'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
-// Room codes are 5 letters (CODE_LENGTH / CODE_ALPHABET in server/rooms.ts — no digits).
-const CODE_LENGTH = 5
+const errorText = (e: unknown, fallback: string) => (e instanceof Error && e.message ? e.message : fallback)
 
 function HomePage() {
   const navigate = useNavigate()
@@ -22,15 +22,15 @@ function HomePage() {
     try {
       const newCode = await apiCreateRoom()
       await navigate({ to: '/room/$code', params: { code: newCode } })
-    } catch {
-      setError('Could not create a game. Is the server running?')
+    } catch (err) {
+      setError(errorText(err, 'Could not create a game. Is the server running?'))
       setBusy(null)
     }
   }
 
   async function join(e: React.FormEvent) {
     e.preventDefault()
-    const clean = code.trim().toUpperCase()
+    const clean = normalizeCode(code)
     if (!clean) return setError('Enter a game code')
     setBusy('join')
     setError('')
@@ -42,8 +42,8 @@ function HomePage() {
         return
       }
       await navigate({ to: '/room/$code', params: { code: info.code } })
-    } catch {
-      setError('Could not reach the server')
+    } catch (err) {
+      setError(errorText(err, 'Could not reach the server'))
       setBusy(null)
     }
   }
@@ -65,16 +65,16 @@ function HomePage() {
         <form className="stack" onSubmit={join}>
           <input
             className="input input-code"
-            placeholder="5-letter code"
+            placeholder={`${CODE_LENGTH}-letter code`}
             aria-label="Game code"
             value={code}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
             onChange={(e) => {
-              // Accept a pasted invite link too (…/room/ABCDE); no maxLength so the paste isn't cut first.
+              // Accept a pasted invite link too (…/room/ABCDEF); no maxLength so the paste isn't cut first.
               const raw = e.target.value.match(/\/room\/([a-z]+)/i)?.[1] ?? e.target.value
-              setCode(raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, CODE_LENGTH))
+              setCode(normalizeCode(raw).slice(0, CODE_LENGTH))
               setError('')
             }}
           />

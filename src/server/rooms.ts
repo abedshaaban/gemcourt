@@ -1,26 +1,28 @@
-import { randomBytes, randomUUID } from 'node:crypto'
-import { networkInterfaces } from 'node:os'
+import { randomUUID } from 'node:crypto'
+import { customAlphabet } from 'nanoid'
 import { applyAction, createGame, skipTurn, toPublicState } from '~/game/engine'
 import type { GameState } from '~/game/types'
 import { MAX_PLAYERS, MIN_PLAYERS } from '~/game/types'
 import type { ChatMessage, LobbyPlayer, OpResult, RoomInfo, RoomOp, RoomStatus, RoomView } from '~/lib/protocol'
-import { CHAT_MAX, NAME_MAX } from '~/lib/protocol'
+import { CHAT_MAX, NAME_MAX, CODE_ALPHABET, CODE_LENGTH, normalizeCode } from '~/lib/protocol'
+import { lanAddresses, serverInfo } from './runtime'
+
+export { normalizeCode }
 
 interface Member {
   id: string
   token: string
   name: string
-  connections: number
-  everConnected: boolean // has opened a live stream at least once
+  connections: number // open sockets; the socket layer closes dead ones, so > 0 means online
+  everConnected: boolean // has opened a live socket at least once
   offlineSince: number // ms timestamp of the last disconnect (meaningful when connections === 0)
-  lastSeen: number // ms timestamp of the last stream open / heartbeat / op from this member
-  stale: boolean // streams look open but no heartbeat for LIVENESS_MS (e.g. phone dropped off Wi-Fi)
   chatTimes: number[] // send times of this member's recent chat messages (rate limit)
 }
 
 interface Listener {
   token: string | null
   send: (view: RoomView) => void
+  gone: () => void // the room was deleted
   unsubscribe: () => void
 }
 
@@ -38,68 +40,52 @@ interface Room {
   chatSeq: number
 }
 
-const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
-const CODE_LENGTH = 5
+const CODE_ATTEMPTS = 5 // 24^6 ≈ 190M codes: a collision is rare, five in a row means something is wrong
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000 // idle rooms with nobody connected are dropped after 3h
-const EMPTY_ROOM_TTL_MS = 15 * 60 * 1000 // rooms nobody ever joined go sooner
+const EMPTY_ROOM_TTL_MS = 10 * 60 * 1000 // rooms with no seated player go after 10 min, even if watched
 const MAX_ROOMS = 500
 /** How long someone must be gone before others may take over for them (host rights, seat reclaim). */
 export const AWAY_GRACE_MS = 5000
 /** How long the current player must be gone before anyone may skip their turn (matches the client's button). */
 export const SKIP_GRACE_MS = 8000
-/** A member whose streams look open but who sent no heartbeat for this long counts as offline (half-open TCP).
- *  Must exceed Chrome's intensive throttling of hidden tabs (timers run ~once a minute), or background tabs flicker offline. */
-const LIVENESS_MS = 90_000
 /** Messages kept (and sent) per room. */
 export const CHAT_HISTORY = 100
 /** Rate limit: at most CHAT_BURST messages per member within CHAT_WINDOW_MS. */
 export const CHAT_BURST = 5
 export const CHAT_WINDOW_MS = 5000
 
-// Keep state on globalThis so Vite's dev-server module reloads don't wipe running games.
-const store = ((globalThis as any).__splendorRooms ??= new Map<string, Room>()) as Map<string, Room>
+// Keep state on globalThis so Vite's dev-server module reloads don't wipe running games, and so the
+// socket handler and the HTTP routes share one store whichever module instance they were loaded from.
+const STORE_KEY = Symbol.for('splendor.rooms')
+const SWEEPER_KEY = Symbol.for('splendor.roomSweeper')
+const g = globalThis as { [STORE_KEY]?: Map<string, Room>; [SWEEPER_KEY]?: ReturnType<typeof setInterval> }
+const store = (g[STORE_KEY] ??= new Map<string, Room>())
 
-if (!(globalThis as any).__splendorSweeper) {
-  ;(globalThis as any).__splendorSweeper = setInterval(() => {
-    const now = Date.now()
-    for (const [code, room] of store) {
-      const ttl = room.members.length === 0 ? EMPTY_ROOM_TTL_MS : ROOM_TTL_MS
-      if (room.listeners.size === 0 && now - room.lastActivity > ttl) store.delete(code)
-    }
-  }, 60 * 1000)
-  ;(globalThis as any).__splendorSweeper.unref?.()
-}
-
-if (!(globalThis as any).__splendorLiveness) {
-  ;(globalThis as any).__splendorLiveness = setInterval(() => {
+if (!g[SWEEPER_KEY]) {
+  g[SWEEPER_KEY] = setInterval(() => {
     const now = Date.now()
     for (const room of store.values()) {
-      let changed = false
-      for (const m of room.members) {
-        m.lastSeen ??= now // members created before a dev hot-reload
-        if (m.connections > 0 && !m.stale && now - m.lastSeen > LIVENESS_MS) {
-          m.stale = true
-          m.offlineSince = now
-          changed = true
-        }
-      }
-      if (changed) broadcast(room)
+      if (room.members.length === 0) {
+        if (now - room.lastActivity > EMPTY_ROOM_TTL_MS) deleteRoom(room)
+      } else if (room.listeners.size === 0 && now - room.lastActivity > ROOM_TTL_MS) deleteRoom(room)
     }
-  }, 5000)
-  ;(globalThis as any).__splendorLiveness.unref?.()
+  }, 60 * 1000)
+  g[SWEEPER_KEY].unref?.()
 }
 
-export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
-}
+const generateCode = customAlphabet(CODE_ALPHABET, CODE_LENGTH)
 
-function newCode(): string {
-  for (;;) {
-    const bytes = randomBytes(CODE_LENGTH)
-    let code = ''
-    for (const b of bytes) code += CODE_ALPHABET[b % CODE_ALPHABET.length]
+function newCode(): string | null {
+  for (let i = 0; i < CODE_ATTEMPTS; i++) {
+    const code = generateCode()
     if (!store.has(code)) return code
   }
+  return null
+}
+
+function deleteRoom(room: Room) {
+  store.delete(room.code)
+  for (const l of [...room.listeners]) l.gone()
 }
 
 function cleanName(name: unknown): string | null {
@@ -138,9 +124,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-export function createRoom(): string | null {
-  if (store.size >= MAX_ROOMS) return null
+export function createRoom(): { ok: true; code: string } | { ok: false; error: string } {
+  if (store.size >= MAX_ROOMS) return { ok: false, error: 'Too many open games on this server' }
   const code = newCode()
+  if (!code) return { ok: false, error: 'Server busy, try again' }
   store.set(code, {
     code,
     members: [],
@@ -154,20 +141,17 @@ export function createRoom(): string | null {
     chat: [],
     chatSeq: 0,
   })
-  return code
+  return { ok: true, code }
 }
 
-export function lanUrls(port: string | number): string[] {
-  const urls: string[] = []
-  for (const list of Object.values(networkInterfaces())) {
-    for (const addr of list ?? []) {
-      if (addr.family === 'IPv4' && !addr.internal) urls.push(`http://${addr.address}:${port}`)
-    }
-  }
-  return urls
+export function roomExists(rawCode: string): boolean {
+  return store.has(normalizeCode(rawCode))
 }
 
-export function roomInfo(rawCode: string, port: string | number): RoomInfo {
+/** `fallbackPort`: the request's port, used until the plugins have recorded the real one. */
+export function roomInfo(rawCode: string, fallbackPort: string | number): RoomInfo {
+  const info = serverInfo()
+  const port = info.port ?? fallbackPort
   const code = normalizeCode(rawCode)
   const room = store.get(code)
   return {
@@ -176,7 +160,8 @@ export function roomInfo(rawCode: string, port: string | number): RoomInfo {
     status: room?.status ?? null,
     playerCount: room?.members.length ?? 0,
     joinable: !!room && room.status === 'lobby' && room.members.length < MAX_PLAYERS,
-    lanUrls: lanUrls(port),
+    lanUrls: lanAddresses().map((ip) => `http://${ip}:${port}`),
+    publicUrl: info.publicUrl,
   }
 }
 
@@ -185,16 +170,8 @@ function memberByToken(room: Room, token: string | null | undefined): Member | u
   return room.members.find((m) => m.token === token)
 }
 
-/** Counts as present: has an open stream that isn't known to be dead. */
-const online = (m: Member) => m.connections > 0 && !m.stale
-
-/** Record activity from a member; if they had gone stale, they're back online right away. */
-function markSeen(room: Room, m: Member) {
-  m.lastSeen = Date.now()
-  if (!m.stale) return
-  m.stale = false
-  if (m.connections > 0) broadcast(room)
-}
+/** Counts as present: has an open socket (half-open ones are closed by the socket's ping check). */
+const online = (m: Member) => m.connections > 0
 
 function viewFor(room: Room, token: string | null): RoomView {
   const me = memberByToken(room, token)
@@ -222,7 +199,7 @@ function broadcast(room: Room) {
   room.lastActivity = Date.now()
   const failed: Listener[] = []
   // Build each distinct view once: spectators (token null) and a member's extra tabs/devices share it,
-  // and the SSE route serializes a shared view object only once.
+  // and the WebSocket layer serializes a shared view object only once.
   const views = new Map<string | null, RoomView>()
   for (const l of room.listeners) {
     try {
@@ -268,8 +245,16 @@ function isValidOp(op: unknown): op is RoomOp {
   return !!op && typeof op === 'object' && !Array.isArray(op) && typeof (op as { op?: unknown }).op === 'string'
 }
 
-/** Register an SSE listener. Returns an unsubscribe function, or null if the room doesn't exist. */
-export function subscribe(rawCode: string, token: string | null, send: (view: RoomView) => void): (() => void) | null {
+/**
+ * Register a socket as a listener. `gone` is called if the room is deleted while subscribed.
+ * Returns an unsubscribe function, or null if the room doesn't exist.
+ */
+export function subscribe(
+  rawCode: string,
+  token: string | null,
+  send: (view: RoomView) => void,
+  gone: () => void = () => {},
+): (() => void) | null {
   const room = store.get(normalizeCode(rawCode))
   if (!room) return null
   let done = false
@@ -280,21 +265,16 @@ export function subscribe(rawCode: string, token: string | null, send: (view: Ro
     const m = memberByToken(room, token)
     if (m) {
       m.connections = Math.max(0, m.connections - 1)
-      if (m.connections === 0) {
-        if (!m.stale) m.offlineSince = Date.now() // a stale member already went offline earlier
-        m.stale = false
-      }
+      if (m.connections === 0) m.offlineSince = Date.now()
       broadcast(room)
     }
   }
-  const listener: Listener = { token, send, unsubscribe }
+  const listener: Listener = { token, send, gone, unsubscribe }
   room.listeners.add(listener)
   const member = memberByToken(room, token)
   if (member) {
     member.connections++
     member.everConnected = true
-    member.lastSeen = Date.now()
-    member.stale = false // reconnected: online again immediately
     broadcast(room) // presence changed; also delivers the initial view to this listener
   } else {
     send(viewFor(room, token))
@@ -333,8 +313,6 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       connections: 0,
       everConnected: false,
       offlineSince: Date.now(),
-      lastSeen: Date.now(),
-      stale: false,
       chatTimes: [],
     }
     room.members.push(member)
@@ -345,11 +323,8 @@ export function performOp(rawCode: string, op: unknown): OpResult {
 
   const me = memberByToken(room, (op as { token?: string }).token)
   if (!me) return { ok: false, error: 'You are not in this room' }
-  markSeen(room, me)
 
   switch (op.op) {
-    case 'heartbeat':
-      return { ok: true }
     case 'chat': {
       const text = cleanChatText(op.text)
       if (!text) return { ok: false, error: 'Type a message first' }

@@ -19,7 +19,7 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-const NAMES = ['Alice', 'Bob', 'Carol', 'Dave']
+const NAMES = ['Alice', 'Bob', 'Carol', 'Dave', 'Erin', 'Frank']
 
 function newGame(playerCount = 2, seed = 42): GameState {
   const players = NAMES.slice(0, playerCount).map((name) => ({ id: name.toLowerCase(), name }))
@@ -120,14 +120,16 @@ describe('noble data', () => {
 
 describe('createGame', () => {
   it.each([
-    [2, 4],
-    [3, 5],
-    [4, 7],
-  ])('sets up a %i-player game with %i gems per pile', (n, perPile) => {
+    [2, 4, 5],
+    [3, 5, 5],
+    [4, 7, 5],
+    [5, 8, 6],
+    [6, 9, 7],
+  ])('sets up a %i-player game with %i gems per pile and %i gold', (n, perPile, gold) => {
     const s = newGame(n)
     expect(s.players).toHaveLength(n)
     for (const c of GEM_COLORS) expect(s.bank[c]).toBe(perPile)
-    expect(s.bank.gold).toBe(5)
+    expect(s.bank.gold).toBe(gold)
     expect(s.nobles).toHaveLength(n + 1)
     for (const tier of TIERS) {
       expect(s.market[tier]).toHaveLength(4)
@@ -156,7 +158,7 @@ describe('createGame', () => {
   })
 
   it('keeps player order', () => {
-    const s = newGame(4)
+    const s = newGame(6)
     expect(s.players.map((p) => p.name)).toEqual(NAMES)
   })
 
@@ -173,7 +175,7 @@ describe('createGame', () => {
 
   it('rejects invalid player counts and duplicate ids', () => {
     expect(() => createGame([{ id: 'a', name: 'A' }])).toThrow()
-    expect(() => createGame(NAMES.concat('Eve').map((n) => ({ id: n, name: n })))).toThrow()
+    expect(() => createGame(NAMES.concat('Grace').map((n) => ({ id: n, name: n })))).toThrow()
     expect(() =>
       createGame([
         { id: 'a', name: 'A' },
@@ -775,7 +777,7 @@ describe('toPublicState', () => {
 
 describe('random playthrough', () => {
   it('keeps token totals and card counts invariant over many random actions', () => {
-    for (const playerCount of [2, 3, 4]) {
+    for (const playerCount of [2, 3, 4, 5, 6]) {
       const rng = mulberry32(playerCount * 1000 + 1)
       let s = newGame(playerCount, playerCount)
       const totalTokens = tokenTotal(s.bank)

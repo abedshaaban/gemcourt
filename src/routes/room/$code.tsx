@@ -7,16 +7,17 @@ import { Brand, QuickRules } from '~/components/lobby/common'
 import { JoinForm } from '~/components/lobby/JoinForm'
 import { WaitingRoom } from '~/components/lobby/WaitingRoom'
 import { loadName, useRoom } from '~/lib/client'
-import { NAME_MAX } from '~/lib/protocol'
+import { NAME_MAX, normalizeCode } from '~/lib/protocol'
 
 export const Route = createFileRoute('/room/$code')({
   component: RoomPage,
 })
 
 function RoomPage() {
-  const { code } = Route.useParams()
+  const { code: rawCode } = Route.useParams()
+  const code = normalizeCode(rawCode)
   const navigate = useNavigate()
-  const { ready, view, conn, join, op, leave, act, sendChat, removed, clearRemoved } = useRoom(code.toUpperCase())
+  const { ready, view, conn, connError, join, op, leave, act, sendChat, removed, clearRemoved } = useRoom(code)
   const [spectating, setSpectating] = useState(false)
   const [notice, setNotice] = useState('')
 
@@ -68,7 +69,7 @@ function RoomPage() {
         <section className="panel">
           <h2>No game here</h2>
           <p className="sub">
-            There is no game with code <b>{code.toUpperCase()}</b>. It may have ended or the server restarted.
+            There is no game with code <b>{code}</b>. It may have ended or the server restarted.
           </p>
           <Link to="/" className="btn btn-primary">
             Back home
@@ -78,11 +79,11 @@ function RoomPage() {
     )
   }
 
-  if (!ready || !view) return <div className="center-note">Entering the gem market…</div>
+  if (!ready || !view) return <div className="center-note">{connError || 'Entering the gem market…'}</div>
 
   const connectionBanner =
     conn === 'reconnecting' ? (
-      <div className="conn-banner">Connection lost — reconnecting…</div>
+      <div className="conn-banner">{connError || 'Connection lost — reconnecting…'}</div>
     ) : notice ? (
       <div className="conn-banner" role="alert" onClick={() => setNotice('')}>
         {notice}

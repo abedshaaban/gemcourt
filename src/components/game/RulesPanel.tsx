@@ -38,9 +38,24 @@ export function RulesPanel() {
             <td>5</td>
             <td>5</td>
           </tr>
+          <tr>
+            <td>5</td>
+            <td>8</td>
+            <td>6</td>
+            <td>6</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>9</td>
+            <td>7</td>
+            <td>7</td>
+          </tr>
         </tbody>
       </table>
-      <p>Four face-up cards are dealt from each of the three decks (tiers I, II, III).</p>
+      <p>
+        Four face-up cards are dealt from each of the three decks (tiers I, II, III). The base game is for 2–4; 5 and 6
+        players are a house extension with larger piles and the same decks.
+      </p>
 
       <h4>On your turn, do exactly one</h4>
       <ol className="sp-rules__actions">
