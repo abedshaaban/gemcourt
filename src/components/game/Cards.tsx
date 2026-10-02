@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Card, GemCounts, Noble, Tier } from '../../game/types'
 import { GEM_COLORS } from '../../game/types'
+import { CardArt } from './CardArt'
 import { CostPip, GemIcon, ReqPip, gemsWithCost } from './Gem'
 import { GEM_NAME, ROMAN, cx, describeCost } from './ui'
 
@@ -17,17 +18,18 @@ function Shell({
   className,
   label,
   style,
+  cardId,
   children,
-}: Clickable & { className: string; label: string; style?: CSSProperties; children: ReactNode }) {
+}: Clickable & { className: string; label: string; style?: CSSProperties; cardId?: string; children: ReactNode }) {
   if (onClick) {
     return (
-      <button type="button" className={cx(className, 'is-clickable')} onClick={onClick} disabled={disabled} aria-label={label} title={label} style={style}>
+      <button type="button" className={cx(className, 'is-clickable')} onClick={onClick} disabled={disabled} aria-label={label} title={label} style={style} data-card-id={cardId}>
         {children}
       </button>
     )
   }
   return (
-    <div className={className} aria-label={label} title={label} role="img" style={style}>
+    <div className={className} aria-label={label} title={label} role="img" style={style} data-card-id={cardId}>
       {children}
     </div>
   )
@@ -49,6 +51,7 @@ export function DevCard({
   disabled,
   className,
   style,
+  cardId,
 }: Clickable & {
   card: Card
   size?: CardSize
@@ -59,6 +62,7 @@ export function DevCard({
   deal?: boolean
   className?: string
   style?: CSSProperties
+  cardId?: string
 }) {
   return (
     <Shell
@@ -66,6 +70,7 @@ export function DevCard({
       disabled={disabled}
       label={cardLabel(card, affordable)}
       style={style}
+      cardId={cardId ?? card.id}
       className={cx(
         'sp-card',
         `sp-card--${size}`,
@@ -81,7 +86,7 @@ export function DevCard({
         <span className="sp-card__points">{card.points > 0 ? card.points : ''}</span>
         <GemIcon color={card.bonus} className="sp-card__bonus" />
       </span>
-      <GemIcon color={card.bonus} className="sp-card__art" />
+      <CardArt color={card.bonus} tier={card.tier} cardId={card.id} />
       <span className="sp-card__cost">
         {gemsWithCost(card.cost).map((c) => (
           <CostPip key={c} color={c} n={card.cost[c]} />

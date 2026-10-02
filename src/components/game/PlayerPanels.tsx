@@ -228,6 +228,20 @@ export function YourArea({
           )}
         </div>
       </div>
+      <div className="sp-you__block sp-you__collection-block">
+        <span className="sp-mini-label">Collection · {player.cards.length}</span>
+        <div className="sp-you__collection" aria-label={`${player.cards.length} collected development cards`}>
+          {player.cards.length === 0 ? (
+            <span className="sp-none">Your first card will rest here</span>
+          ) : (
+            player.cards.map((card) => (
+              <div className="sp-owned-card" key={card.id}>
+                <DevCard card={card} size="sm" />
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </section>
   )
 }

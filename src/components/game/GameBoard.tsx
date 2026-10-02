@@ -15,6 +15,7 @@ import { canAfford, hasLegalMove } from '../../game/helpers'
 import { CardActionModal, ConfirmLeaveModal, DeckModal, DiscardModal, NobleChoiceModal } from './ActionModals'
 import { Bank, SelectionTray } from './Bank'
 import { CardBack, DevCard, EmptySlot, NobleTile } from './Cards'
+import { TableBoard3D } from './TableBoard3D'
 import { SideFeed } from './ChatPanel'
 import type { ChatFeed } from './ChatPanel'
 import { GameOver } from './GameOver'
@@ -46,6 +47,41 @@ const TIER_ORDER: Tier[] = [3, 2, 1]
 const FLASH_MS = 2000 // how long a rival's panel and a refilled market slot stay highlighted
 const PHONE_MQ = '(max-width: 760px)' // keep in sync with the phone breakpoint in game.css
 const USER_SCROLL_QUIET_MS = 1000 // don't auto-scroll if the user touched the scroll this recently
+
+async function flyCardIntoCollection(card: Card, source: HTMLElement | null): Promise<void> {
+  if (!source || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const sourceRect = source.getBoundingClientRect()
+  const movingCard = source.cloneNode(true) as HTMLElement
+  movingCard.classList.remove('sp-deal', 'sp-fresh')
+  movingCard.setAttribute('aria-hidden', 'true')
+  Object.assign(movingCard.style, {
+    position: 'fixed', left: `${sourceRect.left}px`, top: `${sourceRect.top}px`,
+    width: `${sourceRect.width}px`, height: `${sourceRect.height}px`, margin: '0', zIndex: '10000',
+    pointerEvents: 'none', transformOrigin: 'center center', willChange: 'left, top, width, height, transform',
+  })
+  document.body.append(movingCard)
+  const findDestination = () => Array.from(document.querySelectorAll<HTMLElement>('.sp-you__collection .sp-card[data-card-id]'))
+    .find((element) => element.dataset.cardId === card.id) ?? null
+  let destination = findDestination()
+  const waitStarted = performance.now()
+  while (!destination && performance.now() - waitStarted < 1400) {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    destination = findDestination()
+  }
+  if (!destination) {
+    movingCard.remove()
+    return
+  }
+  const destRect = destination.getBoundingClientRect()
+  const animation = movingCard.animate([
+    { left: `${sourceRect.left}px`, top: `${sourceRect.top}px`, width: `${sourceRect.width}px`, height: `${sourceRect.height}px`, transform: 'perspective(900px) rotateY(0deg) rotateZ(0deg)', opacity: 1, offset: 0 },
+    { left: `${(sourceRect.left + destRect.left) / 2}px`, top: `${(sourceRect.top + destRect.top) / 2 - 78}px`, width: `${(sourceRect.width + destRect.width) / 2}px`, height: `${(sourceRect.height + destRect.height) / 2}px`, transform: 'perspective(900px) rotateY(22deg) rotateZ(-7deg)', opacity: 1, offset: 0.58 },
+    { left: `${destRect.left}px`, top: `${destRect.top}px`, width: `${destRect.width}px`, height: `${destRect.height}px`, transform: 'perspective(900px) rotateY(0deg) rotateZ(0deg)', opacity: 0.25, offset: 1 },
+  ], { duration: 760, easing: 'cubic-bezier(.2,.72,.22,1)', fill: 'forwards' })
+  try { await animation.finished } catch { /* interrupted by navigation */ }
+  movingCard.remove()
+  destination.animate([{ transform: 'translateY(5px) scale(.92)', filter: 'brightness(1.7)' }, { transform: 'translateY(0) scale(1)', filter: 'brightness(1)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' })
+}
 
 /** "Offline — skip available in Ns", then "Offline — you can skip their turn" (members only; spectators can't skip).
  *  Ticks once a second while counting down. Null when the current player isn't offline. */
@@ -279,6 +315,10 @@ export function GameBoard({
 
   const doBuy = async () => {
     if (!canAct || !target || target.kind === 'deck' || (target.kind === 'reserved' && target.ownerId)) return
+    const cardToBuy = target.card
+    const sourceSelector = target.kind === 'market' ? '.sp-table' : '.sp-you__reserved'
+    const source = Array.from(document.querySelectorAll<HTMLElement>(`${sourceSelector} .sp-card[data-card-id]`))
+      .find((element) => element.dataset.cardId === cardToBuy.id) ?? null
     const ok = await run({
       type: 'buy',
       source:
@@ -289,6 +329,7 @@ export function GameBoard({
     if (ok) {
       setTarget(null)
       setSelection([])
+      void flyCardIntoCollection(cardToBuy, source)
     }
   }
 
@@ -493,6 +534,7 @@ export function GameBoard({
         <div className="sp-left">
           {/* ---------- table ---------- */}
           <section className="sp-table" aria-label="Table" ref={tableRef}>
+            <TableBoard3D />
             <div className="sp-nobles" aria-label="Nobles">
               {state.nobles.map((n) => (
                 <NobleTile

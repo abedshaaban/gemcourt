@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { TOKEN_COLORS } from '../../game/types'
 import type { GemColor, TokenColor, TokenCounts } from '../../game/types'
+import { Bank3D } from './Bank3D'
 import { Chip } from './Gem'
 import { GEM_NAME, cx } from './ui'
 
@@ -16,10 +18,11 @@ export function Bank({
   pending: boolean
   onPick: (c: TokenColor) => void
 }) {
+  const [threeDReady, setThreeDReady] = useState(false)
   return (
     <section className={cx('sp-bank', interactive && 'is-interactive')} aria-label="Bank">
       <h3 className="sp-section-title sp-bank__title">Bank</h3>
-      <div className="sp-bank__piles">
+      <div className={cx('sp-bank__piles', threeDReady && 'is-3d')}>
         {TOKEN_COLORS.map((c) => {
           const picked = c === 'gold' ? 0 : selection.filter((s) => s === c).length
           const shown = bank[c] - picked
@@ -50,6 +53,7 @@ export function Bank({
             </button>
           )
         })}
+        <Bank3D bank={bank} colors={TOKEN_COLORS} selection={selection} onReady={() => setThreeDReady(true)} />
       </div>
     </section>
   )
