@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { ChatPanel } from '~/components/game/ChatPanel'
 import { GameBoard } from '~/components/game/GameBoard'
 import { Brand, QuickRules } from '~/components/lobby/common'
 import { JoinForm } from '~/components/lobby/JoinForm'
@@ -14,7 +15,7 @@ export const Route = createFileRoute('/room/$code')({
 function RoomPage() {
   const { code } = Route.useParams()
   const navigate = useNavigate()
-  const { ready, view, conn, join, op, leave, act, removed, clearRemoved } = useRoom(code.toUpperCase())
+  const { ready, view, conn, join, op, leave, act, sendChat, removed, clearRemoved } = useRoom(code.toUpperCase())
   const [spectating, setSpectating] = useState(false)
   const [notice, setNotice] = useState('')
 
@@ -114,6 +115,7 @@ function RoomPage() {
           onLeave={goHome}
           colorIndex={colorIndex}
           currentSkipAt={view.game.status === 'playing' && current && connected[current.id] === false ? currentAwayFor.until : null}
+          chat={view.youId ? { messages: view.chat ?? [], onSend: sendChat } : undefined}
         />
       </>
     )
@@ -140,16 +142,26 @@ function RoomPage() {
           </div>
         </section>
       ) : view.youId ? (
-        <WaitingRoom
-          view={view}
-          op={op}
-          canHost={canHost}
-          onLeave={async () => {
-            const r = await leave()
-            if (r.ok) goHome()
-            else report(r)
-          }}
-        />
+        <>
+          <WaitingRoom
+            view={view}
+            op={op}
+            canHost={canHost}
+            onLeave={async () => {
+              const r = await leave()
+              if (r.ok) goHome()
+              else report(r)
+            }}
+          />
+          <ChatPanel
+            className="panel panel-wide lobby-chat"
+            messages={view.chat ?? []}
+            youId={view.youId}
+            players={view.players}
+            colorIndex={Object.fromEntries(view.players.map((p, i) => [p.id, i]))}
+            onSend={sendChat}
+          />
+        </>
       ) : (
         <JoinForm view={view} onJoin={join} />
       )}

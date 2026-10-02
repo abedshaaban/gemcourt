@@ -15,7 +15,8 @@ import { canAfford, hasLegalMove } from '../../game/helpers'
 import { CardActionModal, ConfirmLeaveModal, DeckModal, DiscardModal, NobleChoiceModal } from './ActionModals'
 import { Bank, SelectionTray } from './Bank'
 import { CardBack, DevCard, EmptySlot, NobleTile } from './Cards'
-import { GameLog } from './GameLog'
+import { SideFeed } from './ChatPanel'
+import type { ChatFeed } from './ChatPanel'
 import { GameOver } from './GameOver'
 import { LogText } from './LogText'
 import { MyBar, OpponentPanel, YourArea } from './PlayerPanels'
@@ -33,6 +34,7 @@ export interface GameBoardProps {
   onLeave: () => void
   colorIndex?: Record<string, number> // playerId -> stable avatar color index (join order)
   currentSkipAt?: number | null // current player is offline: when their turn becomes skippable (epoch ms)
+  chat?: ChatFeed // room chat (members only)
 }
 
 type Target =
@@ -93,6 +95,7 @@ export function GameBoard({
   onLeave,
   colorIndex,
   currentSkipAt = null,
+  chat,
 }: GameBoardProps): JSX.Element {
   const meIndex = youId ? state.players.findIndex((p) => p.id === youId) : -1
   const me = meIndex >= 0 ? state.players[meIndex] : null
@@ -604,7 +607,7 @@ export function GameBoard({
               ))}
             </div>
           </section>
-          <GameLog log={state.log} players={state.players} colorIndex={colorIndex} />
+          <SideFeed log={state.log} players={state.players} colorIndex={colorIndex} youId={youId} chat={chat} />
         </aside>
       </div>
 

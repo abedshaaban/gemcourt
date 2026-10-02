@@ -3,8 +3,8 @@ import { networkInterfaces } from 'node:os'
 import { applyAction, createGame, skipTurn, toPublicState } from '~/game/engine'
 import type { GameState } from '~/game/types'
 import { MAX_PLAYERS, MIN_PLAYERS } from '~/game/types'
-import type { LobbyPlayer, OpResult, RoomInfo, RoomOp, RoomStatus, RoomView } from '~/lib/protocol'
-import { NAME_MAX } from '~/lib/protocol'
+import type { ChatMessage, LobbyPlayer, OpResult, RoomInfo, RoomOp, RoomStatus, RoomView } from '~/lib/protocol'
+import { CHAT_MAX, NAME_MAX } from '~/lib/protocol'
 
 interface Member {
   id: string
@@ -15,6 +15,7 @@ interface Member {
   offlineSince: number // ms timestamp of the last disconnect (meaningful when connections === 0)
   lastSeen: number // ms timestamp of the last stream open / heartbeat / op from this member
   stale: boolean // streams look open but no heartbeat for LIVENESS_MS (e.g. phone dropped off Wi-Fi)
+  chatTimes: number[] // send times of this member's recent chat messages (rate limit)
 }
 
 interface Listener {
@@ -32,6 +33,8 @@ interface Room {
   listeners: Set<Listener>
   version: number
   lastActivity: number
+  chat: ChatMessage[] // last CHAT_HISTORY messages, oldest first
+  chatSeq: number
 }
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -46,6 +49,11 @@ export const SKIP_GRACE_MS = 8000
 /** A member whose streams look open but who sent no heartbeat for this long counts as offline (half-open TCP).
  *  Must exceed Chrome's intensive throttling of hidden tabs (timers run ~once a minute), or background tabs flicker offline. */
 const LIVENESS_MS = 90_000
+/** Messages kept (and sent) per room. */
+export const CHAT_HISTORY = 100
+/** Rate limit: at most CHAT_BURST messages per member within CHAT_WINDOW_MS. */
+export const CHAT_BURST = 5
+export const CHAT_WINDOW_MS = 5000
 
 // Keep state on globalThis so Vite's dev-server module reloads don't wipe running games.
 const store = ((globalThis as any).__splendorRooms ??= new Map<string, Room>()) as Map<string, Room>
@@ -105,6 +113,19 @@ function cleanName(name: unknown): string | null {
   return /[\p{L}\p{N}\p{S}]/u.test(n) ? n : null
 }
 
+/** Chat text: one line of visible text, at most CHAT_MAX code points; null if nothing is left. */
+export function cleanChatText(text: unknown): string | null {
+  if (typeof text !== 'string') return null
+  const cleaned = text
+    .normalize('NFC')
+    // control characters and bidi overrides (which could make a line read as someone else's)
+    .replace(/[\p{Cc}\u200E\u200F\u202A-\u202E\u2066-\u2069]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const t = Array.from(cleaned).slice(0, CHAT_MAX).join('').trim()
+  return t ? t : null
+}
+
 const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
 function shuffle<T>(arr: T[]): T[] {
@@ -128,6 +149,8 @@ export function createRoom(): string | null {
     listeners: new Set(),
     version: 0,
     lastActivity: Date.now(),
+    chat: [],
+    chatSeq: 0,
   })
   return code
 }
@@ -186,6 +209,7 @@ function viewFor(room: Room, token: string | null): RoomView {
     players,
     youId: me?.id ?? null,
     game: room.game ? toPublicState(room.game, me?.id ?? null) : null,
+    chat: me ? (room.chat ?? []) : [], // `?? []`: rooms created before a dev hot-reload
     version: room.version,
   }
 }
@@ -303,6 +327,7 @@ export function performOp(rawCode: string, op: unknown): OpResult {
       offlineSince: Date.now(),
       lastSeen: Date.now(),
       stale: false,
+      chatTimes: [],
     }
     room.members.push(member)
     room.hostId ??= member.id
@@ -317,6 +342,24 @@ export function performOp(rawCode: string, op: unknown): OpResult {
   switch (op.op) {
     case 'heartbeat':
       return { ok: true }
+    case 'chat': {
+      const text = cleanChatText(op.text)
+      if (!text) return { ok: false, error: 'Type a message first' }
+      const now = Date.now()
+      const recent = (me.chatTimes ?? []).filter((t) => now - t < CHAT_WINDOW_MS)
+      if (recent.length >= CHAT_BURST) {
+        me.chatTimes = recent
+        return { ok: false, error: 'Slow down — too many messages' }
+      }
+      recent.push(now)
+      me.chatTimes = recent
+      room.chat ??= []
+      room.chatSeq = (room.chatSeq ?? 0) + 1
+      room.chat.push({ id: room.chatSeq, playerId: me.id, name: me.name, text, ts: now })
+      if (room.chat.length > CHAT_HISTORY) room.chat.splice(0, room.chat.length - CHAT_HISTORY)
+      broadcast(room)
+      return { ok: true }
+    }
     case 'rename': {
       if (room.status !== 'lobby') return { ok: false, error: 'Names are locked once the game starts' }
       const name = cleanName(op.name)

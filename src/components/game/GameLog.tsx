@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
 import { LogText } from './LogText'
 import { avatarColor } from './ui'
@@ -7,10 +8,12 @@ export function GameLog({
   log,
   players,
   colorIndex,
+  header,
 }: {
   log: LogEntry[]
   players: PublicPlayer[]
   colorIndex?: Record<string, number> // playerId -> stable avatar color index (join order)
+  header?: ReactNode // replaces the "Chronicle" title (e.g. Chronicle / Chat tabs)
 }) {
   const listRef = useRef<HTMLOListElement>(null)
   const lastId = log.length ? log[log.length - 1].id : -1
@@ -23,7 +26,7 @@ export function GameLog({
 
   return (
     <section className="sp-log" aria-label="Game log">
-      <h3 className="sp-section-title">Chronicle</h3>
+      {header ?? <h3 className="sp-section-title">Chronicle</h3>}
       <ol className="sp-log__list" ref={listRef} aria-live="polite">
         {log.length === 0 && <li className="sp-log__empty">The game begins…</li>}
         {log.map((entry) => {
