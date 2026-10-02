@@ -136,3 +136,22 @@ describe('chat', () => {
     w.unsubscribe()
   })
 })
+
+describe('broadcast', () => {
+  it('builds one view per distinct viewer and keeps views tailored', () => {
+    const { code, tokens } = setup()
+    const s1 = watch(code, null)
+    const s2 = watch(code, null)
+    const a = watch(code, tokens[0])
+    const b = watch(code, tokens[1])
+    expect(say(code, tokens[0], 'hello')).toEqual({ ok: true })
+    // spectators receive the same (shared) view object, so it is serialized only once
+    expect(s1.view).toBe(s2.view)
+    expect(s1.view.chat).toEqual([])
+    // members still get their own view
+    expect(a.view).not.toBe(b.view)
+    expect(a.view.youId).not.toBe(b.view.youId)
+    expect(a.view.chat.map((m) => m.text)).toEqual(['hello'])
+    for (const w of [s1, s2, a, b]) w.unsubscribe()
+  })
+})

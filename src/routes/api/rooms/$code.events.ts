@@ -5,6 +5,16 @@ import type { RoomView } from '~/lib/protocol'
 
 const MAX_QUEUED = 50
 
+// A broadcast hands the same view object to every listener with the same token (e.g. all spectators):
+// serialize and encode it once instead of once per stream.
+const encoded = new WeakMap<RoomView, Uint8Array>()
+const sharedEncoder = new TextEncoder()
+function encodeView(view: RoomView): Uint8Array {
+  let bytes = encoded.get(view)
+  if (!bytes) encoded.set(view, (bytes = sharedEncoder.encode(`data: ${JSON.stringify(view)}\n\n`)))
+  return bytes
+}
+
 // Server-Sent Events stream: pushes a fresh RoomView to this client on every room change.
 export const Route = createFileRoute('/api/rooms/$code/events')({
   server: {
@@ -17,12 +27,12 @@ export const Route = createFileRoute('/api/rooms/$code/events')({
         const stream = new ReadableStream<Uint8Array>({
           start(controller) {
             let closed = false
-            const write = (chunk: string) => {
+            const write = (chunk: string | Uint8Array) => {
               if (closed) return
               // Client stopped reading (e.g. sleeping laptop): drop it so presence reflects reality.
               if ((controller.desiredSize ?? 0) < -MAX_QUEUED) return cleanup()
               try {
-                controller.enqueue(encoder.encode(chunk))
+                controller.enqueue(typeof chunk === 'string' ? encoder.encode(chunk) : chunk)
               } catch {
                 cleanup()
               }
@@ -40,7 +50,7 @@ export const Route = createFileRoute('/api/rooms/$code/events')({
               } catch {}
             }
             unsubscribe = subscribe(params.code, token, (view: RoomView) => {
-              write(`data: ${JSON.stringify(view)}\n\n`)
+              write(encodeView(view))
             })
             if (!unsubscribe) {
               write(`event: missing\ndata: {}\n\n`)

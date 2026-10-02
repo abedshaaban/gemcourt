@@ -221,9 +221,14 @@ function broadcast(room: Room) {
   room.version++
   room.lastActivity = Date.now()
   const failed: Listener[] = []
+  // Build each distinct view once: spectators (token null) and a member's extra tabs/devices share it,
+  // and the SSE route serializes a shared view object only once.
+  const views = new Map<string | null, RoomView>()
   for (const l of room.listeners) {
     try {
-      l.send(viewFor(room, l.token))
+      let view = views.get(l.token)
+      if (!view) views.set(l.token, (view = viewFor(room, l.token)))
+      l.send(view)
     } catch {
       failed.push(l)
     }

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { GemColor, Tier } from '../../game/types'
 
 const palettes: Record<GemColor, { sky: string; light: string; dark: string; accent: string }> = {
@@ -8,8 +9,9 @@ const palettes: Record<GemColor, { sky: string; light: string; dark: string; acc
   black: { sky: '#837f9f', light: '#d9c38e', dark: '#303143', accent: '#c5a967' },
 }
 
-/** A small original vector vignette: rendered as art on the card itself, never as UI text. */
-export function CardArt({ color, tier, cardId }: { color: GemColor; tier: Tier; cardId: string }) {
+/** A small original vector vignette: rendered as art on the card itself, never as UI text.
+ *  Memoized: pure in its primitive props, and every board re-render would otherwise rebuild each SVG. */
+export const CardArt = memo(function CardArt({ color, tier, cardId }: { color: GemColor; tier: Tier; cardId: string }) {
   const p = palettes[color]
   const id = `art-${cardId}`
   const variation = Number(cardId.match(/(\d+)$/)?.[1] ?? tier)
@@ -75,4 +77,4 @@ export function CardArt({ color, tier, cardId }: { color: GemColor; tier: Tier; 
       <rect x="7" y="7" width="146" height="176" rx="5" fill="none" stroke="#fff4d6" strokeOpacity=".52" strokeWidth="2" />
     </svg>
   )
-}
+})

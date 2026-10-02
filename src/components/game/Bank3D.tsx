@@ -11,6 +11,9 @@ const COLORS: Record<TokenColor, string> = {
   black: '#3b3431',
   gold: '#e8b938',
 }
+const DIM_TOKEN = new THREE.Color('#777b82')
+const DIM_GEM = new THREE.Color('#91949b')
+const WHITE = new THREE.Color('#ffffff')
 const LAYERS = 5
 const VIEW_ANGLE = (55 * Math.PI) / 180
 const STACK_PITCH = 0.17
@@ -69,6 +72,13 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
     const models: THREE.Object3D[][] = Array.from({ length: 6 }, () => [])
     const tokenMaterials: THREE.Material[][][] = Array.from({ length: 6 }, () => [])
     const gemMaterials: THREE.Material[][][] = Array.from({ length: 6 }, () => [])
+    // Cut-jewel meshes per pile/layer, collected once at load instead of traversing every model each draw.
+    const jewels: THREE.Object3D[][][] = Array.from({ length: 6 }, () => [])
+    const tokenColors = Object.fromEntries(
+      Object.entries(COLORS).map(([key, hex]) => [key, new THREE.Color(hex)]),
+    ) as Record<TokenColor, THREE.Color>
+    const scratchLight = new THREE.Color()
+    const scratchShadow = new THREE.Color()
     let template: THREE.Object3D | null = null
 
     const resizeAndDraw = () => {
@@ -102,6 +112,11 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
       const visibleCount = Math.max(0, currentBank[color] - selected)
       const count = visibleCount === 0 ? 1 : Math.min(LAYERS, visibleCount)
       const dim = visibleCount === 0
+      // Colors computed once per pile per draw (not once per material per layer).
+      const tokenColor = dim ? DIM_TOKEN : tokenColors[color]
+      const gemBase = dim ? DIM_GEM : tokenColors[color]
+      const gemLight = scratchLight.copy(gemBase).lerp(WHITE, 0.48)
+      const gemShadow = scratchShadow.copy(gemBase).multiplyScalar(0.52)
       const group = tokenGroups[index]
       const baseHeight = 0.105
       const averageStackHeight = baseHeight + ((count - 1) * STACK_PITCH) / 2
@@ -110,20 +125,17 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
       models[index].forEach((model, layer) => {
         model.visible = layer < count
         model.position.y = baseHeight + layer * STACK_PITCH
-        model.traverse((object) => {
-          if (object.name === 'GEO-cut_jewel') object.visible = layer === count - 1
-        })
+        for (const jewel of jewels[index][layer] ?? []) jewel.visible = layer === count - 1
         for (const material of tokenMaterials[index][layer] ?? []) {
           const colored = material as THREE.MeshStandardMaterial
-          colored.color.set(dim ? '#777b82' : COLORS[color])
+          colored.color.copy(tokenColor)
           colored.transparent = false
         }
         for (const material of gemMaterials[index][layer] ?? []) {
           const colored = material as THREE.MeshStandardMaterial
-          const baseColor = new THREE.Color(dim ? '#91949b' : COLORS[color])
-          if (material.name === 'MAT-gem-light') baseColor.lerp(new THREE.Color('#ffffff'), 0.48)
-          if (material.name === 'MAT-gem-shadow') baseColor.multiplyScalar(0.52)
-          colored.color.copy(baseColor)
+          colored.color.copy(
+            material.name === 'MAT-gem-light' ? gemLight : material.name === 'MAT-gem-shadow' ? gemShadow : gemBase,
+          )
           colored.transparent = false
         }
         })
@@ -171,7 +183,9 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
             const model = template.clone(true)
             const bodyMats: THREE.Material[] = []
             const jewelMats: THREE.Material[] = []
+            const layerJewels: THREE.Object3D[] = []
             model.traverse((object) => {
+              if (object.name === 'GEO-cut_jewel') layerJewels.push(object)
               if (!(object instanceof THREE.Mesh)) return
               const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material]
               const clonedMaterials = sourceMaterials.map((source) => {
@@ -185,6 +199,7 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
             models[index].push(model)
             tokenMaterials[index].push(bodyMats)
             gemMaterials[index].push(jewelMats)
+            jewels[index].push(layerJewels)
             tokenGroups[index].add(model)
           }
         }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { PublicGameState } from '../../game/types'
 import { Avatar } from './PlayerPanels'
 import { LogText } from './LogText'
@@ -22,6 +22,9 @@ export function GameOver({
   onViewBoard: () => void
 }) {
   const indexed = state.players.map((p, i) => ({ p, i }))
+  const nameKey = state.players.map((p) => p.name).join('\u0000')
+  // One shared array for every history line (not one per line), so memoized LogText lines stay cached.
+  const names = useMemo(() => state.players.map((p) => p.name), [nameKey])
   const ranked = [...indexed].sort((a, b) => b.p.points - a.p.points || a.p.cards.length - b.p.cards.length)
   const winners = new Set(state.winnerIds)
   const winnerNames = state.players.filter((p) => winners.has(p.id)).map((p) => p.name)
@@ -125,7 +128,7 @@ export function GameOver({
                   <span className="sp-history__number" aria-label={`Event ${index + 1}`}>{index + 1}</span>
                   <span className="sp-history__mark" style={{ background: playerIndex >= 0 ? avatarColor(playerIndex) : 'var(--accent)' }} aria-hidden="true" />
                   <span className="sp-history__text">
-                    <LogText message={entry.message} names={state.players.map((p) => p.name)} />
+                    <LogText message={entry.message} names={names} />
                   </span>
                 </li>
               )

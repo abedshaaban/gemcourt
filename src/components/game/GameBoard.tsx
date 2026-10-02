@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, JSX } from 'react'
 import { GEM_COLORS, MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
 import type {
@@ -15,7 +15,7 @@ import { canAfford, hasLegalMove } from '../../game/helpers'
 import { CardActionModal, ConfirmLeaveModal, DeckModal, DiscardModal, NobleChoiceModal } from './ActionModals'
 import { Bank, SelectionTray } from './Bank'
 import { CardBack, DevCard, EmptySlot, NobleTile } from './Cards'
-import { TableBoard3D } from './TableBoard3D'
+import { LazyTableBoard3D } from './lazy3d'
 import { SideFeed } from './ChatPanel'
 import type { ChatFeed } from './ChatPanel'
 import { GameOver } from './GameOver'
@@ -86,22 +86,31 @@ async function flyCardIntoCollection(card: Card, source: HTMLElement | null): Pr
 /** "Offline — skip available in Ns", then "Offline — you can skip their turn" (members only; spectators can't skip).
  *  Ticks once a second while counting down. Null when the current player isn't offline. */
 function useOfflineStatus(skipAt: number | null, canSkip: boolean): string | null {
-  const [now, setNow] = useState(() => Date.now())
+  // Stores whole seconds (not a timestamp): a tick that lands on the same second returns the previous
+  // state, so React skips the re-render and the board updates once a second instead of four times.
+  const [tick, setTick] = useState<{ at: number | null; left: number }>({ at: null, left: 0 })
   useEffect(() => {
     if (skipAt === null) return
-    setNow(Date.now())
-    if (Date.now() >= skipAt) return
+    const update = () => {
+      const left = secondsLeft(skipAt)
+      setTick((prev) => (prev.at === skipAt && prev.left === left ? prev : { at: skipAt, left }))
+      return left
+    }
+    if (update() <= 0) return
     const id = window.setInterval(() => {
-      const t = Date.now()
-      setNow(t)
-      if (t >= skipAt) window.clearInterval(id)
+      if (update() <= 0) window.clearInterval(id)
     }, 250) // finer than 1s so the displayed second never lags
     return () => window.clearInterval(id)
   }, [skipAt])
   if (skipAt === null) return null
   if (!canSkip) return 'Offline'
-  const left = Math.ceil((skipAt - now) / 1000)
+  // Before the effect has synced to a new skipAt, compute directly rather than show a stale value.
+  const left = tick.at === skipAt ? tick.left : secondsLeft(skipAt)
   return left > 0 ? `Offline — skip available in ${left}s` : 'Offline — you can skip their turn'
+}
+
+function secondsLeft(at: number): number {
+  return Math.max(0, Math.ceil((at - Date.now()) / 1000))
 }
 
 /** Next token selection after clicking a bank pile, plus an optional explanatory hint. */
@@ -557,7 +566,9 @@ export function GameBoard({
         <div className="sp-left">
           {/* ---------- table ---------- */}
           <section className="sp-table" aria-label="Table" ref={tableRef}>
-            <TableBoard3D />
+            <Suspense fallback={null}>
+              <LazyTableBoard3D />
+            </Suspense>
             <div className="sp-nobles" aria-label="Nobles">
               {state.nobles.map((n) => (
                 <NobleTile

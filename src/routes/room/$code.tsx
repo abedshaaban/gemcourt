@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ChatPanel } from '~/components/game/ChatPanel'
 import { GameBoard } from '~/components/game/GameBoard'
+import { preload3D } from '~/components/game/lazy3d'
 import { Brand, QuickRules } from '~/components/lobby/common'
 import { JoinForm } from '~/components/lobby/JoinForm'
 import { WaitingRoom } from '~/components/lobby/WaitingRoom'
@@ -45,6 +46,21 @@ function RoomPage() {
 
   const goHome = () => navigate({ to: '/' })
 
+  // Derived props kept referentially stable (view parts are structurally shared by useRoom), so the
+  // memoized log / chat lists don't re-render on unrelated updates.
+  const players = view?.players
+  const connectedMap = useMemo(() => Object.fromEntries((players ?? []).map((p) => [p.id, p.connected])), [players])
+  const colorIndexMap = useMemo(() => Object.fromEntries((players ?? []).map((p, i) => [p.id, i])), [players])
+  const chatMessages = view?.chat
+  const chatFeed = useMemo(() => ({ messages: chatMessages ?? [], onSend: sendChat }), [chatMessages, sendChat])
+
+  // Fetch the three.js chunk in the background while players sit in the room, so the 3D board is
+  // ready when the game starts without weighing down the lobby's first load.
+  const inRoom = !!view
+  useEffect(() => {
+    if (inRoom) return preload3D()
+  }, [inRoom])
+
   if (conn === 'missing') {
     return (
       <main className="lobby-shell">
@@ -79,11 +95,11 @@ function RoomPage() {
 
   // In-game (or finished) — members play, others may spectate.
   if (view.status === 'playing' && view.game && (view.youId || spectating)) {
-    const connected = Object.fromEntries(view.players.map((p) => [p.id, p.connected]))
+    const connected = connectedMap
     const current = view.game.players[view.game.currentPlayerIndex]
     const currentAway = view.game.status === 'playing' && current && connected[current.id] === false && awayLongEnough
     const turn = view.game.turn
-    const colorIndex = Object.fromEntries(view.players.map((p, i) => [p.id, i]))
+    const colorIndex = colorIndexMap
     return (
       <>
         {connectionBanner}
@@ -115,7 +131,7 @@ function RoomPage() {
           onLeave={goHome}
           colorIndex={colorIndex}
           currentSkipAt={view.game.status === 'playing' && current && connected[current.id] === false ? currentAwayFor.until : null}
-          chat={view.youId ? { messages: view.chat ?? [], onSend: sendChat } : undefined}
+          chat={view.youId ? chatFeed : undefined}
         />
       </>
     )
@@ -158,7 +174,7 @@ function RoomPage() {
             messages={view.chat ?? []}
             youId={view.youId}
             players={view.players}
-            colorIndex={Object.fromEntries(view.players.map((p, i) => [p.id, i]))}
+            colorIndex={colorIndexMap}
             onSend={sendChat}
           />
         </>

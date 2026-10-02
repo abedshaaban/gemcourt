@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { JSX, ReactNode } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
 import { CHAT_MAX } from '../../lib/protocol'
@@ -42,7 +42,9 @@ export function useChatUnread(messages: ChatMessage[], youId: string | null, vis
   return messages.filter((m) => m.id > seenId && m.playerId !== youId).length
 }
 
-const timeOf = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+// One shared formatter: toLocaleTimeString() builds a new Intl formatter on every call.
+let timeFormat: Intl.DateTimeFormat | null = null
+const timeOf = (ts: number) => (timeFormat ??= new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' })).format(ts)
 
 export function ChatPanel({
   messages,
@@ -99,11 +101,26 @@ export function ChatPanel({
     }
   }
 
-  const nameOf = (m: ChatMessage) => players.find((p) => p.id === m.playerId)?.name ?? m.name
-  const colorOf = (m: ChatMessage) => {
-    const idx = colorIndex?.[m.playerId] ?? players.findIndex((p) => p.id === m.playerId)
-    return idx >= 0 ? avatarColor(idx) : 'var(--text-faint)'
-  }
+  // Typing re-renders this panel on every keystroke; only rebuild the message list when its inputs change.
+  const items = useMemo(() => {
+    const nameOf = (m: ChatMessage) => players.find((p) => p.id === m.playerId)?.name ?? m.name
+    const colorOf = (m: ChatMessage) => {
+      const idx = colorIndex?.[m.playerId] ?? players.findIndex((p) => p.id === m.playerId)
+      return idx >= 0 ? avatarColor(idx) : 'var(--text-faint)'
+    }
+    return messages.map((m) => {
+      const mine = m.playerId === youId
+      return (
+        <li key={m.id} className={cx('sp-chat__item', mine && 'is-mine')} title={timeOf(m.ts)}>
+          <span className="sp-chat__name" style={{ color: mine ? undefined : colorOf(m) }}>
+            {mine ? 'You' : nameOf(m)}
+          </span>
+          {/* Plain text child: React escapes it, so messages can never inject markup. */}
+          <span className="sp-chat__text">{m.text}</span>
+        </li>
+      )
+    })
+  }, [messages, youId, players, colorIndex])
 
   return (
     <section className={cx('sp-chat', className)} aria-label="Chat">
@@ -118,18 +135,7 @@ export function ChatPanel({
         }}
       >
         {messages.length === 0 && <li className="sp-log__empty">No messages yet. Say hello to the table…</li>}
-        {messages.map((m) => {
-          const mine = m.playerId === youId
-          return (
-            <li key={m.id} className={cx('sp-chat__item', mine && 'is-mine')} title={timeOf(m.ts)}>
-              <span className="sp-chat__name" style={{ color: mine ? undefined : colorOf(m) }}>
-                {mine ? 'You' : nameOf(m)}
-              </span>
-              {/* Plain text child: React escapes it, so messages can never inject markup. */}
-              <span className="sp-chat__text">{m.text}</span>
-            </li>
-          )
-        })}
+        {items}
       </ol>
       <form className="sp-chat__form" onSubmit={submit}>
         <input
@@ -202,10 +208,9 @@ export function SideFeed({
     return () => window.removeEventListener('keydown', onKey)
   }, [sheetOpen])
 
-  if (!chat) return <GameLog log={log} players={players} colorIndex={colorIndex} />
-
   const showChat = !isPhone && tab === 'chat'
-  const tabs = (
+  // Memoized so the (memoized) GameLog isn't re-rendered just because this header was re-created.
+  const tabs = useMemo(() => (
     <div className="sp-section-title sp-feed__tabs" role="tablist" aria-label="Chronicle and chat">
       <button type="button" role="tab" aria-selected={!showChat} className={cx('sp-feed__tab', !showChat && 'is-active')} onClick={() => setTab('log')}>
         Chronicle
@@ -215,7 +220,9 @@ export function SideFeed({
         <UnreadBadge count={unread} />
       </button>
     </div>
-  )
+  ), [showChat, unread])
+
+  if (!chat) return <GameLog log={log} players={players} colorIndex={colorIndex} />
 
   return (
     <>

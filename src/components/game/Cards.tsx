@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Card, GemCounts, Noble, Tier } from '../../game/types'
 import { GEM_COLORS } from '../../game/types'
@@ -158,7 +159,8 @@ export function EmptySlot({ size = 'md' }: { size?: CardSize }) {
   return <div className={cx('sp-slot-empty', `sp-card--${size}`)} aria-label="Empty slot" />
 }
 
-export function NobleTile({
+/** Memoized: on the board its props (structurally shared noble/bonuses) rarely change between renders. */
+export const NobleTile = memo(function NobleTile({
   noble,
   size = 'md',
   onClick,
@@ -199,4 +201,4 @@ export function NobleTile({
       </span>
     </Shell>
   )
-}
+})

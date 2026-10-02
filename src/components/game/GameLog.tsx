@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { LogEntry, PublicPlayer } from '../../game/types'
 import { LogText } from './LogText'
 import { avatarColor } from './ui'
 
-export function GameLog({
+/** Memoized: the log can be long, and the board re-renders on every click, tick and chat message. */
+export const GameLog = memo(function GameLog({
   log,
   players,
   colorIndex,
@@ -17,7 +18,9 @@ export function GameLog({
 }) {
   const listRef = useRef<HTMLOListElement>(null)
   const lastId = log.length ? log[log.length - 1].id : -1
-  const names = players.map((p) => p.name)
+  const nameKey = players.map((p) => p.name).join('\u0000')
+  // Stable while names are unchanged, so each memoized LogText line can skip re-rendering.
+  const names = useMemo(() => players.map((p) => p.name), [nameKey])
 
   useEffect(() => {
     const el = listRef.current
@@ -49,4 +52,4 @@ export function GameLog({
       </ol>
     </section>
   )
-}
+})

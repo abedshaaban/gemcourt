@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { TOKEN_COLORS } from '../../game/types'
 import type { GemColor, TokenColor, TokenCounts } from '../../game/types'
-import { Bank3D } from './Bank3D'
 import { Chip } from './Gem'
+import { LazyBank3D } from './lazy3d'
 import { GEM_NAME, cx } from './ui'
 
 export function Bank({
@@ -19,6 +19,7 @@ export function Bank({
   onPick: (c: TokenColor) => void
 }) {
   const [threeDReady, setThreeDReady] = useState(false)
+  const onThreeDReady = useCallback(() => setThreeDReady(true), [])
   return (
     <section className={cx('sp-bank', interactive && 'is-interactive')} aria-label="Bank">
       <h3 className="sp-section-title sp-bank__title">Bank</h3>
@@ -53,7 +54,10 @@ export function Bank({
             </button>
           )
         })}
-        <Bank3D bank={bank} colors={TOKEN_COLORS} selection={selection} onReady={() => setThreeDReady(true)} />
+        {/* The CSS chips stay visible until the lazily loaded WebGL piles report ready. */}
+        <Suspense fallback={null}>
+          <LazyBank3D bank={bank} colors={TOKEN_COLORS} selection={selection} onReady={onThreeDReady} />
+        </Suspense>
       </div>
     </section>
   )

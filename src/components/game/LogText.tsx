@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { ReactNode } from 'react'
 import type { TokenColor } from '../../game/types'
 import { GemIcon } from './Gem'
@@ -39,14 +40,28 @@ function gemChips(text: string, keyBase: string): ReactNode[] {
   return out
 }
 
+// The name-splitting regex depends only on the player names, which rarely change: build it once per
+// name list instead of once per log line per render (the full-game history can be hundreds of lines).
+let cachedKey: string | null = null
+let cachedRe: RegExp | null = null
+function namesRegex(names: string[]): RegExp | null {
+  const key = names.join('\u0000')
+  if (key !== cachedKey) {
+    const sorted = names.filter(Boolean).sort((a, b) => b.length - a.length)
+    cachedKey = key
+    cachedRe = sorted.length ? new RegExp(`(${sorted.map(escapeRe).join('|')})`) : null
+  }
+  return cachedRe
+}
+
 /** A log message with gem color words drawn as small chips. Player names are left untouched. */
-export function LogText({ message, names }: { message: string; names: string[] }) {
-  const sorted = names.filter(Boolean).sort((a, b) => b.length - a.length)
-  if (sorted.length === 0) return <>{gemChips(message, 'm')}</>
-  const parts = message.split(new RegExp(`(${sorted.map(escapeRe).join('|')})`))
+export const LogText = memo(function LogText({ message, names }: { message: string; names: string[] }) {
+  const re = namesRegex(names)
+  if (!re) return <>{gemChips(message, 'm')}</>
+  const parts = message.split(re)
   return (
     <>
       {parts.map((part, i) => (i % 2 === 1 ? part : gemChips(part, `p${i}`)))}
     </>
   )
-}
+})

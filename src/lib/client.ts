@@ -98,6 +98,40 @@ export async function apiOp(code: string, op: RoomOp): Promise<OpResult> {
 
 // ---------- Live room subscription ----------
 
+/**
+ * Returns `next`, but reuses every subtree of `prev` that is deep-equal to it (like TanStack Query's
+ * structural sharing). Each SSE message is a freshly parsed object; keeping unchanged parts
+ * referentially stable lets memoized components (game log, bank, chat) skip re-rendering.
+ */
+export function shareEqual<T>(prev: unknown, next: T): T {
+  if (Object.is(prev, next)) return prev as T
+  if (typeof prev !== 'object' || typeof next !== 'object' || prev === null || next === null) return next
+  const prevIsArray = Array.isArray(prev)
+  if (prevIsArray !== Array.isArray(next)) return next
+  if (prevIsArray) {
+    const a = prev as unknown[]
+    const b = next as unknown as unknown[]
+    let same = a.length === b.length
+    const out = b.map((item, i) => {
+      const shared = i < a.length ? shareEqual(a[i], item) : item
+      if (shared !== a[i]) same = false
+      return shared
+    })
+    return (same ? a : out) as T
+  }
+  const a = prev as Record<string, unknown>
+  const b = next as Record<string, unknown>
+  const keys = Object.keys(b)
+  let same = keys.length === Object.keys(a).length
+  const out: Record<string, unknown> = {}
+  for (const k of keys) {
+    const shared = shareEqual(a[k], b[k])
+    out[k] = shared
+    if (shared !== a[k] || !(k in a)) same = false
+  }
+  return (same ? a : out) as T
+}
+
 export type ConnState = 'connecting' | 'open' | 'reconnecting' | 'missing'
 
 export function useRoom(code: string) {
@@ -146,7 +180,7 @@ export function useRoom(code: string) {
     es.onmessage = (e) => {
       touch()
       const v: RoomView = JSON.parse(e.data)
-      setView(v)
+      setView((prev) => shareEqual(prev, v))
       setConn('open')
       // Server no longer recognises us (kicked / left / server restarted): drop stale session.
       if (session && v.youId === null) {

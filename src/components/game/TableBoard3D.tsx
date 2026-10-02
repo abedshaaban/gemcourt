@@ -52,9 +52,10 @@ export function TableBoard3D() {
       renderer.render(scene, camera)
     }
 
+    // The scene depends only on the host's size, which the observer already tracks (a window
+    // 'resize' listener on top of it rendered every resize twice).
     const observer = new ResizeObserver(draw)
     observer.observe(host)
-    window.addEventListener('resize', draw)
 
     new GLTFLoader().load('/models/splendor-board.glb', ({ scene: loaded }) => {
       if (disposed) return
@@ -71,7 +72,6 @@ export function TableBoard3D() {
     return () => {
       disposed = true
       observer.disconnect()
-      window.removeEventListener('resize', draw)
       renderer.dispose()
       if (board) scene.remove(board)
       scene.traverse((object) => {
