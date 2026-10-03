@@ -106,7 +106,9 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
         if (!button || !chip) return
         const chipX = button.offsetLeft + chip.offsetLeft + chip.offsetWidth / 2
         const chipY = button.offsetTop + chip.offsetTop + chip.offsetHeight / 2
-        const x = (chipX - width / 2) / unit
+        // The camera sits on +Y looking back toward the origin with +Z up, so screen-right is world -X.
+        // Negate here so each 3D pile lands under its own (invisible, clickable) DOM chip.
+        const x = (width / 2 - chipX) / unit
         const z = (height / 2 - chipY) / unit / Math.cos(VIEW_ANGLE)
       const selected = color === 'gold' ? 0 : currentSelection.filter((item) => item === color).length
       const visibleCount = Math.max(0, currentBank[color] - selected)
