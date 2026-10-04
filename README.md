@@ -4,6 +4,36 @@ A local-network implementation of the board game **Splendor** (standard base-gam
 extended to 5–6), built with TanStack Start + React. Your machine is the server; everyone plays in a browser,
 on your Wi-Fi or, with `pnpm play:online`, from anywhere.
 
+![Splendor 3D table during a three-player game, with gem stacks, purchased cards, player scores, and move history](docs/images/game-3d.png)
+
+## App previews
+
+Screenshots from the running app, showing the journey from opening a table to a game in progress.
+
+### Create or join a game
+
+Start a new table or enter a friend's six-letter game code.
+
+![Splendor home screen with Create game and Join game controls](docs/images/home.png)
+
+### Live waiting room
+
+Share the room code, invite link, or QR code. Connected players appear at the table;
+the host chooses the winning score and starts when everyone is ready.
+
+![Live waiting room with three connected players, an invitation QR code, and the Start game button](docs/images/waiting-room.png)
+
+### A game in progress
+
+The **3D table** above shows a match after several rounds, with purchased cards,
+reserved cards, gem balances, and scores. Switch to **Flat view** for a close-up
+of the same card market and token bank. Rival panels and the chronicle update as players take turns.
+
+![The same three-player game in Flat view, showing nobles, the card market, token bank, player collection, and move history](docs/images/game-flat.png)
+
+These previews were captured locally. To play live with friends, follow the setup below;
+`pnpm play:online` generates a new public invitation URL for each session.
+
 ## Run it
 
 ```bash
