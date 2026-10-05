@@ -391,15 +391,18 @@ export function GameBoard({
     { selector: '.sp-bankcol', title: 'Collect gems', body: 'Take up to three different gems, or two of one color when at least four remain in the bank.' },
     { selector: '.sp-nobles', title: 'Earn noble visits', body: 'Build the matching color bonuses to attract a noble. Each noble is worth 3 points.' },
     { selector: '.sp-you', title: 'Your collection', body: `Purchased cards give permanent discounts. Reach ${state.winningPoints} points to trigger the final round.` },
+    { selector: '.sp-opps', title: 'Your rivals', body: 'Watch your rivals’ points, gems, permanent bonuses and reserved cards to plan your next move. The active player is highlighted here.' },
+    { selector: '.sp-log', title: 'Chat and chronicle', body: chat ? 'Use Chat to talk with the other merchants, or Chronicle to follow each move. On phones, tap the chat bubble to open the conversation.' : 'The Chronicle records each move. When you join a multiplayer room, you can also chat with the other merchants here; on phones, use the chat bubble.' },
   ]
   useEffect(() => {
     document.querySelectorAll('.sp-tutorial-focus').forEach((el) => el.classList.remove('sp-tutorial-focus'))
     if (tutorialStep < 0) return
-    const target = document.querySelector(tutorialSteps[tutorialStep]?.selector ?? '')
+    const target = (tutorialStep === 5 ? document.querySelector('.sp-chat-fab') : null)
+      ?? document.querySelector(tutorialSteps[tutorialStep]?.selector ?? '')
     target?.classList.add('sp-tutorial-focus')
     target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center', inline: 'nearest' })
     return () => target?.classList.remove('sp-tutorial-focus')
-  }, [tutorialStep, state.winningPoints])
+  }, [tutorialStep, state.winningPoints, chat !== undefined])
   const closeTutorial = () => {
     setTutorialStep(-1)
     try { localStorage.setItem('splendor-tutorial-done', '1') } catch { /* storage may be disabled */ }
@@ -689,7 +692,7 @@ export function GameBoard({
               ))}
             </div>
           </section>
-          <SideFeed log={state.log} players={state.players} colorIndex={colorIndex} youId={youId} chat={chat} />
+          <SideFeed log={state.log} players={state.players} colorIndex={colorIndex} youId={youId} chat={chat} tourChat={tutorialStep === 5} />
         </aside>
       </div>
 

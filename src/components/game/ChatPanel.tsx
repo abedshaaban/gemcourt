@@ -184,17 +184,20 @@ export function SideFeed({
   colorIndex,
   youId,
   chat,
+  tourChat = false,
 }: {
   log: LogEntry[]
   players: PublicPlayer[]
   colorIndex?: Record<string, number>
   youId: string | null
   chat?: ChatFeed
+  tourChat?: boolean
 }): JSX.Element {
   const isPhone = useMediaQuery(PHONE_MQ)
   const [tab, setTab] = useState<'log' | 'chat'>('log')
   const [sheetOpen, setSheetOpen] = useState(false)
-  const unread = useChatUnread(chat?.messages ?? [], youId, isPhone ? sheetOpen : tab === 'chat')
+  const showChat = !isPhone && (tourChat || tab === 'chat')
+  const unread = useChatUnread(chat?.messages ?? [], youId, isPhone ? sheetOpen : showChat)
 
   useEffect(() => {
     if (!isPhone) setSheetOpen(false)
@@ -209,7 +212,6 @@ export function SideFeed({
     return () => window.removeEventListener('keydown', onKey)
   }, [sheetOpen])
 
-  const showChat = !isPhone && tab === 'chat'
   // Memoized so the (memoized) GameLog isn't re-rendered just because this header was re-created.
   const tabs = useMemo(() => (
     <div className="sp-section-title sp-feed__tabs" role="tablist" aria-label="Chronicle and chat">
