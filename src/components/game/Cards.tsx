@@ -1,4 +1,4 @@
-import { Check, Crown } from 'lucide-react'
+import { Crown } from 'lucide-react'
 import { memo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Card, GemCounts, Noble, Tier } from '../../game/types'
@@ -99,15 +99,8 @@ export function DevCard({
           Blind
         </span>
       )}
-      {affordable ? (
-        <span className="sp-card__can" aria-hidden="true" title="You can buy this">
-          <Check size="1em" aria-hidden="true" />
-        </span>
-      ) : (
-        <span className="sp-card__tier" aria-hidden="true">
-          {ROMAN[card.tier]}
-        </span>
-      )}
+      {affordable && <span className="sp-card__can" aria-hidden="true" title="You can afford this card" />}
+      <span className="sp-card__tier" aria-hidden="true">{ROMAN[card.tier]}</span>
     </Shell>
   )
 }

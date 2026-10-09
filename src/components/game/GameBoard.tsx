@@ -1,4 +1,4 @@
-import { Bell, BellOff, CircleAlert, Crown, Sparkle, X } from 'lucide-react'
+import { Bell, BellOff, CircleAlert, Crown, Maximize2, Minimize2, Sparkle, X } from 'lucide-react'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, JSX } from 'react'
 import { GEM_COLORS, MAX_RESERVED, MAX_TOKENS, isHiddenCard } from '../../game/types'
@@ -48,6 +48,20 @@ const TIER_ORDER: Tier[] = [3, 2, 1]
 const FLASH_MS = 2000 // how long a rival's panel and a refilled market slot stay highlighted
 const PHONE_MQ = '(max-width: 760px)' // keep in sync with the phone breakpoint in game.css
 const USER_SCROLL_QUIET_MS = 1000 // don't auto-scroll if the user touched the scroll this recently
+
+// Safari (incl. iPadOS) only exposes the webkit-prefixed Fullscreen API.
+interface WebkitFullscreenDocument extends Document {
+  webkitFullscreenEnabled?: boolean
+  webkitFullscreenElement?: Element | null
+  webkitExitFullscreen?: () => Promise<void> | void
+}
+interface WebkitFullscreenElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void> | void
+}
+function getFullscreenElement(): Element | null {
+  const doc = document as WebkitFullscreenDocument
+  return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null
+}
 
 async function flyCardIntoCollection(card: Card, source: HTMLElement | null): Promise<void> {
   if (!source || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -170,6 +184,41 @@ export function GameBoard({
     try { return localStorage.getItem('splendor-tutorial-done') ? -1 : 0 } catch { return -1 }
   })
   const [confirmLeave, setConfirmLeave] = useState(false)
+  // Full screen (iPad Safari only has the webkit-prefixed API; iPhone Safari has none, so the button hides).
+  // Detected in an effect (not during render) so server rendering never touches `document`.
+  const [fullscreenSupported, setFullscreenSupported] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  useEffect(() => {
+    const doc = document as WebkitFullscreenDocument
+    const el = document.documentElement as WebkitFullscreenElement
+    const supported = !!(doc.fullscreenEnabled || doc.webkitFullscreenEnabled) && !!(el.requestFullscreen || el.webkitRequestFullscreen)
+    setFullscreenSupported(supported)
+    if (!supported) return
+    const sync = () => setIsFullscreen(!!getFullscreenElement())
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('webkitfullscreenchange', sync)
+    sync()
+    return () => {
+      document.removeEventListener('fullscreenchange', sync)
+      document.removeEventListener('webkitfullscreenchange', sync)
+    }
+  }, [])
+  const toggleFullscreen = useCallback(async () => {
+    const doc = document as WebkitFullscreenDocument
+    const el = document.documentElement as WebkitFullscreenElement
+    try {
+      if (getFullscreenElement()) {
+        if (doc.exitFullscreen) await doc.exitFullscreen()
+        else await doc.webkitExitFullscreen?.()
+      } else if (el.requestFullscreen) {
+        await el.requestFullscreen()
+      } else {
+        await el.webkitRequestFullscreen?.()
+      }
+    } catch {
+      /* rejected (e.g. not a user gesture, or blocked by the browser): nothing to do */
+    }
+  }, [])
   const [resultsHidden, setResultsHidden] = useState(false)
 
   // ---------- what just happened ----------
@@ -398,7 +447,7 @@ export function GameBoard({
     document.querySelectorAll('.sp-tutorial-focus').forEach((el) => el.classList.remove('sp-tutorial-focus'))
     if (tutorialStep < 0) return
     const target = (tutorialStep === 5 ? document.querySelector('.sp-chat-fab') : null)
-      ?? document.querySelector(tutorialSteps[tutorialStep]?.selector ?? '')
+      ?? document.querySelector(tutorialSteps[tutorialStep]?.selector ?? '') ?? document.querySelector('.sp-preview')
     target?.classList.add('sp-tutorial-focus')
     target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center', inline: 'nearest' })
     return () => target?.classList.remove('sp-tutorial-focus')
@@ -533,6 +582,19 @@ export function GameBoard({
             Rules
           </button>
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTutorialStep(0)}>Tour</button>
+          {fullscreenSupported && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost sp-fsbtn"
+              onClick={toggleFullscreen}
+              aria-pressed={isFullscreen}
+              aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+              title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+            >
+              {isFullscreen ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
+              <span className="sp-fsbtn__label">{isFullscreen ? 'Exit full screen' : 'Full screen'}</span>
+            </button>
+          )}
           <button type="button" className="btn btn-sm" onClick={() => (playing && me ? setConfirmLeave(true) : onLeave())}>
             Leave
           </button>
@@ -575,6 +637,9 @@ export function GameBoard({
             aria-label="Table"
             ref={tableRef}
           >
+            <div className="sp-table__heading">
+              <span className="sp-section-title">The table</span>
+            </div>
             <Suspense fallback={null}>
               <LazyTableBoard3D />
             </Suspense>
