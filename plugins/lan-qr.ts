@@ -30,7 +30,7 @@ export function lanQr(): Plugin {
     }
   }
   return {
-    name: 'splendor-lan-qr',
+    name: 'gemcourt-lan-qr',
     configureServer: hook,
     configurePreviewServer: hook,
   }

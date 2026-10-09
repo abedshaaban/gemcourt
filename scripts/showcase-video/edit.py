@@ -2,7 +2,7 @@
 """Cuts the recorded clips into the showcase video (ffmpeg only, no server or browser needed).
 
 Reads <work>/clips/*.mp4 and <work>/caps/*.png (from record.mjs) and the cut list in story.json, writes
-<out>/splendor-showcase.mp4 (1920x1080) and <out>/splendor-showcase-1080x1350.mp4 (4:5 feed version).
+<out>/gemcourt-showcase.mp4 (1920x1080) and <out>/gemcourt-showcase-1080x1350.mp4 (4:5 feed version).
 Requires Python 3.8+.
 """
 import argparse
@@ -21,7 +21,7 @@ def rel(p):
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument('--work-dir', default=os.environ.get('SHOWCASE_WORK_DIR', '.work'), help='where record.mjs put clips/ and caps/ (default: .work)')
 ap.add_argument('--out-dir', default=os.environ.get('SHOWCASE_OUT_DIR', 'out'), help='output folder (default: out)')
-ap.add_argument('--name', default='splendor-showcase', help='output file name stem')
+ap.add_argument('--name', default='gemcourt-showcase', help='output file name stem')
 ap.add_argument('--ffmpeg', default=os.environ.get('SHOWCASE_FFMPEG', 'ffmpeg'))
 ap.add_argument('--no-feed', action='store_true', help='skip the 1080x1350 (4:5) feed version')
 args = ap.parse_args()

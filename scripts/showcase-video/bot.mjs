@@ -1,4 +1,4 @@
-// Minimal WebSocket player for driving Splendor rooms from Node.
+// Minimal WebSocket player for driving Gemcourt rooms from Node.
 import WebSocket from 'ws'
 
 const GEMS = ['white', 'blue', 'green', 'red', 'black']

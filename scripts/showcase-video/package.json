@@ -1,8 +1,9 @@
 {
-  "name": "splendor-showcase-video",
+  "name": "gemcourt-showcase-video",
   "private": true,
+  "license": "MIT",
   "type": "module",
-  "description": "Records and edits the Splendor showcase video (Playwright + ffmpeg).",
+  "description": "Records and edits the Gemcourt showcase video (Playwright + ffmpeg).",
   "scripts": {
     "video": "./run.sh",
     "record": "./run.sh --no-edit",

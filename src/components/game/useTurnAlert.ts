@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const BASE_TITLE = 'Splendor'
-const TURN_TITLE = '● Your turn — Splendor'
-const FLASH_TITLE = '○ YOUR TURN — Splendor'
+const BASE_TITLE = 'Gemcourt'
+const TURN_TITLE = '● Your turn — Gemcourt'
+const FLASH_TITLE = '○ YOUR TURN — Gemcourt'
 const SOUND_KEY = 'splendor:turn-sound'
 
 /** Browsers block sound and vibration until the page has had a tap or click; skip quietly until then. */

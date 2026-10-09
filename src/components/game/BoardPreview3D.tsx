@@ -158,7 +158,7 @@ function cardFace(card: Card | Noble | null, tier: Tier, count: number, invalida
     }
     ctx.textAlign = 'center'; ctx.fillStyle = '#e9d6a6'
     ctx.font = 'bold 82px Georgia'; ctx.fillText(ROMAN[tier], 128, 204)
-    ctx.font = '22px Georgia'; ctx.fillText('SPLENDOR', 128, 252)
+    ctx.font = '22px Georgia'; ctx.fillText('GEMCOURT', 128, 252)
     ctx.fillStyle = '#111a29e0'; ctx.fillRect(88, 294, 80, 41)
     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 28px sans-serif'; ctx.fillText(String(count), 128, 324)
   } else if (noble) {

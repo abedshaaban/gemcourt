@@ -7,7 +7,8 @@ import { serverInfo } from '../src/server/runtime.ts'
 import { bold, onListening, printQrBanner } from './terminal.ts'
 
 // `pnpm play:online`: a Cloudflare Quick Tunnel (no account) gives the server a public
-// https://*.trycloudflare.com address, new on every start. Opt-in: `--mode online` or SPLENDOR_TUNNEL=1.
+// https://*.trycloudflare.com address, new on every start. Opt-in: `--mode online` or GEMCOURT_TUNNEL=1
+// (the pre-rename SPLENDOR_TUNNEL=1 is still accepted).
 
 const URL_RE = /https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/i
 const SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
@@ -99,9 +100,9 @@ export function tunnel(): Plugin {
     if (enabled) onListening(server, (port) => startTunnel(server, port))
   }
   return {
-    name: 'splendor-tunnel',
+    name: 'gemcourt-tunnel',
     configResolved(config) {
-      enabled = config.mode === 'online' || process.env.SPLENDOR_TUNNEL === '1'
+      enabled = config.mode === 'online' || (process.env.GEMCOURT_TUNNEL ?? process.env.SPLENDOR_TUNNEL) === '1'
     },
     configureServer: hook,
     configurePreviewServer: hook,

@@ -30,7 +30,7 @@ function attach(httpServer: HttpServer | null, load: () => Promise<unknown>, log
     if (new URL(req.url ?? '/', 'http://localhost').pathname !== WS_PATH) return // e.g. Vite's HMR socket
     socket.on('error', () => {})
     const handler = await load().then(wsHandler, (e: unknown) => {
-      logger.error(`[splendor] could not load the server entry for a WebSocket: ${e instanceof Error ? e.message : e}`)
+      logger.error(`[gemcourt] could not load the server entry for a WebSocket: ${e instanceof Error ? e.message : e}`)
       return undefined
     })
     if (!handler) return socket.destroy()
@@ -52,7 +52,7 @@ export function websocket(): Plugin {
   const recordPort = (server: ViteDevServer | PreviewServer) =>
     onListening(server, (port) => (serverInfo().port = port)) // the API builds LAN invite links from it
   return {
-    name: 'splendor-websocket',
+    name: 'gemcourt-websocket',
     configureServer(server) {
       recordPort(server)
       // The runner caches modules, so this is cheap; after a hot update it re-runs the changed code.

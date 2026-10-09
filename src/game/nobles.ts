@@ -1,6 +1,6 @@
 import type { GemCounts, Noble } from './types'
 
-// The 10 official Splendor base game nobles (3 prestige points each).
+// The 10 standard base-game nobles (3 prestige points each).
 function n(id: string, req: Partial<GemCounts>): Noble {
   return {
     id,
