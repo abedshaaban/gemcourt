@@ -4,6 +4,15 @@ A local-network implementation of the board game **Splendor** (standard base-gam
 extended to 5–6), built with TanStack Start + React. Your machine is the server; everyone plays in a browser,
 on your Wi-Fi or, with `pnpm play:online`, from anywhere.
 
+<!--
+  GitHub only shows an inline video player for files uploaded through its web UI.
+  For one: edit this README on github.com, drag docs/videos/splendor-showcase.mp4 into the editor,
+  and replace the link below with the generated https://github.com/user-attachments/... URL.
+-->
+[![Animated preview of a Splendor game: buying a card and taking gems on the table](docs/images/showcase-preview.gif)](docs/videos/splendor-showcase.mp4)
+
+[▶ Watch the 25-second showcase video](docs/videos/splendor-showcase.mp4)
+
 ![Splendor 3D table during a three-player game, with gem stacks, purchased cards, player scores, and move history](docs/images/game-3d.png)
 
 ## App previews
