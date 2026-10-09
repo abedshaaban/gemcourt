@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "play": "vite build && vite preview",
-    "play:online": "vite build && vite preview --mode online",
+    "play": "node scripts/guard-build.mjs && vite build && vite preview",
+    "play:online": "node scripts/guard-build.mjs && vite build && vite preview --mode online",
+    "prebuild": "node scripts/guard-build.mjs",
     "build": "vite build",
     "start": "vite preview",
     "test": "vitest run",
