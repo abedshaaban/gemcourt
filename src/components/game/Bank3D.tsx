@@ -2,18 +2,10 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import type { TokenColor, TokenCounts } from '../../game/types'
+import { TOKEN_COLOR as COLORS, TOKEN_SYMBOL_COLOR } from './tokenColors'
 
-const COLORS: Record<TokenColor, string> = {
-  white: '#f2ede2',
-  blue: '#376fd6',
-  green: '#1f9d63',
-  red: '#d63a4a',
-  black: '#3b3431',
-  gold: '#e8b938',
-}
 const DIM_TOKEN = new THREE.Color('#777b82')
 const DIM_GEM = new THREE.Color('#91949b')
-const WHITE = new THREE.Color('#ffffff')
 const LAYERS = 5
 const VIEW_ANGLE = (55 * Math.PI) / 180
 const STACK_PITCH = 0.17
@@ -48,7 +40,9 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
     camera.position.set(0, 8, 8 * Math.tan(VIEW_ANGLE))
     camera.lookAt(0, 0, 0)
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
+    let renderer: THREE.WebGLRenderer
+    try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }) }
+    catch { return }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -72,13 +66,12 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
     const models: THREE.Object3D[][] = Array.from({ length: 6 }, () => [])
     const tokenMaterials: THREE.Material[][][] = Array.from({ length: 6 }, () => [])
     const gemMaterials: THREE.Material[][][] = Array.from({ length: 6 }, () => [])
-    // Cut-jewel meshes per pile/layer, collected once at load instead of traversing every model each draw.
-    const jewels: THREE.Object3D[][][] = Array.from({ length: 6 }, () => [])
     const tokenColors = Object.fromEntries(
       Object.entries(COLORS).map(([key, hex]) => [key, new THREE.Color(hex)]),
     ) as Record<TokenColor, THREE.Color>
-    const scratchLight = new THREE.Color()
-    const scratchShadow = new THREE.Color()
+    const symbolColors = Object.fromEntries(
+      Object.keys(COLORS).map((color) => [color, new THREE.Color(TOKEN_SYMBOL_COLOR(color as TokenColor))]),
+    ) as Record<TokenColor, THREE.Color>
     let template: THREE.Object3D | null = null
 
     const resizeAndDraw = () => {
@@ -116,9 +109,7 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
       const dim = visibleCount === 0
       // Colors computed once per pile per draw (not once per material per layer).
       const tokenColor = dim ? DIM_TOKEN : tokenColors[color]
-      const gemBase = dim ? DIM_GEM : tokenColors[color]
-      const gemLight = scratchLight.copy(gemBase).lerp(WHITE, 0.48)
-      const gemShadow = scratchShadow.copy(gemBase).multiplyScalar(0.52)
+      const gemBase = dim ? DIM_GEM : symbolColors[color]
       const group = tokenGroups[index]
       const baseHeight = 0.105
       const averageStackHeight = baseHeight + ((count - 1) * STACK_PITCH) / 2
@@ -127,7 +118,6 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
       models[index].forEach((model, layer) => {
         model.visible = layer < count
         model.position.y = baseHeight + layer * STACK_PITCH
-        for (const jewel of jewels[index][layer] ?? []) jewel.visible = layer === count - 1
         for (const material of tokenMaterials[index][layer] ?? []) {
           const colored = material as THREE.MeshStandardMaterial
           colored.color.copy(tokenColor)
@@ -135,9 +125,7 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
         }
         for (const material of gemMaterials[index][layer] ?? []) {
           const colored = material as THREE.MeshStandardMaterial
-          colored.color.copy(
-            material.name === 'MAT-gem-light' ? gemLight : material.name === 'MAT-gem-shadow' ? gemShadow : gemBase,
-          )
+          colored.color.copy(gemBase)
           colored.transparent = false
         }
         })
@@ -159,7 +147,15 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
     new GLTFLoader().load(
       '/models/splendor-token.glb',
       ({ scene: loaded }) => {
-        if (disposed) return
+        if (disposed) {
+          loaded.traverse((object) => {
+            if (!(object instanceof THREE.Mesh)) return
+            object.geometry.dispose()
+            const materials = Array.isArray(object.material) ? object.material : [object.material]
+            materials.forEach((material) => material.dispose())
+          })
+          return
+        }
         template = loaded
         for (let index = 0; index < 6; index++) {
           const shadowCanvas = document.createElement('canvas')
@@ -182,12 +178,10 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
           shadows.push(shadow)
 
           for (let layer = 0; layer < LAYERS; layer++) {
-            const model = template.clone(true)
+            const model = template.getObjectByName(`GEO-token_${colors[index]}`)!.clone(true)
             const bodyMats: THREE.Material[] = []
             const jewelMats: THREE.Material[] = []
-            const layerJewels: THREE.Object3D[] = []
             model.traverse((object) => {
-              if (object.name === 'GEO-cut_jewel') layerJewels.push(object)
               if (!(object instanceof THREE.Mesh)) return
               const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material]
               const clonedMaterials = sourceMaterials.map((source) => {
@@ -201,7 +195,6 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
             models[index].push(model)
             tokenMaterials[index].push(bodyMats)
             gemMaterials[index].push(jewelMats)
-            jewels[index].push(layerJewels)
             tokenGroups[index].add(model)
           }
         }
@@ -229,6 +222,11 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
             material.dispose()
           })
         }
+      })
+      template?.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return
+        const materials = Array.isArray(object.material) ? object.material : [object.material]
+        materials.forEach((material) => material.dispose())
       })
     }
   }, [])

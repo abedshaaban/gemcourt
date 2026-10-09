@@ -152,6 +152,9 @@
 .sp-soundbtn {
   position: relative;
 }
+.sp-fsbtn {
+  white-space: nowrap;
+}
 .sp-soundbtn.is-off {
   color: var(--text-faint);
 }
@@ -308,9 +311,7 @@
   container-type: inline-size;
   position: relative;
   isolation: isolate;
-  transform: perspective(1400px) rotateX(6deg) rotateY(-0.8deg);
-  transform-origin: center 55%;
-  transform-style: preserve-3d;
+  transform: none;
   border-radius: 22px;
   padding: 26px 24px 20px;
   background: transparent;
@@ -323,7 +324,7 @@
 .sp-table__3d-host {
   position: absolute;
   z-index: -1;
-  inset: -15px;
+  inset: 0;
   overflow: visible;
   pointer-events: none;
 }
@@ -382,26 +383,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0 16%, transparent 17%),
-    conic-gradient(
-      from 30deg at 50% 45%,
-      var(--c-l55),
-      var(--c) 16%,
-      var(--deep) 33%,
-      var(--c) 50%,
-      var(--c-l70) 66%,
-      var(--deep) 83%,
-      var(--c-l55)
-    );
-}
-.sp-gem--white .sp-gem__cut { clip-path: polygon(22% 4%, 78% 4%, 100% 36%, 50% 98%, 0 36%); }
-.sp-gem--blue .sp-gem__cut { clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%); }
-.sp-gem--green .sp-gem__cut { clip-path: polygon(26% 8%, 74% 8%, 94% 28%, 94% 72%, 74% 92%, 26% 92%, 6% 72%, 6% 28%); }
-.sp-gem--red .sp-gem__cut { clip-path: polygon(50% 2%, 98% 50%, 50% 98%, 2% 50%); }
-.sp-gem--black .sp-gem__cut { clip-path: circle(46% at 50% 50%); }
-.sp-gem--gold .sp-gem__cut {
-  clip-path: polygon(50% 0, 62% 34%, 98% 36%, 69% 58%, 80% 94%, 50% 72%, 20% 94%, 31% 58%, 2% 36%, 38% 34%);
+  color: var(--c);
 }
 
 /* ---------- chips (tokens) ---------- */
@@ -415,14 +397,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 36%),
-    radial-gradient(
-      circle,
-      var(--c) 0 47%,
-      var(--c-d68) 48% 53%,
-      var(--c) 54% 100%
-    );
+  background: var(--c);
   box-shadow:
     inset 0 -3px 5px rgba(0, 0, 0, 0.35),
     inset 0 2px 3px rgba(255, 255, 255, 0.35),
@@ -430,17 +405,7 @@
     0 4px 8px rgba(0, 0, 0, 0.45);
 }
 .sp-chip::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  border-radius: 50%;
-  background: repeating-conic-gradient(var(--inlay) 0 11deg, transparent 11deg 45deg);
-  -webkit-mask: radial-gradient(circle, transparent 0 64%, #000 65% 83%, transparent 84%);
-  mask: radial-gradient(circle, transparent 0 64%, #000 65% 83%, transparent 84%);
-  pointer-events: none;
+  content: none;
 }
 .sp-chip--xs { --size: 22px; }
 .sp-chip--sm { --size: 30px; }
@@ -450,6 +415,9 @@
   font-size: calc(var(--size) * 0.36);
   position: relative;
 }
+.sp-chip__gem .sp-gem__cut { color: #faf7ed; --gem-line: var(--c); }
+.sp-c-white .sp-chip__gem .sp-gem__cut,
+.sp-c-gold .sp-chip__gem .sp-gem__cut { color: #174a35; }
 .sp-chip__count {
   position: relative;
   font-weight: 700;
@@ -688,23 +656,18 @@
     0 0 24px 4px rgba(240, 198, 90, 0.4),
     0 10px 22px rgba(0, 0, 0, 0.55);
 }
-/* "Can buy" corner tag (replaces the tier numeral on affordable cards). */
+/* Affordable cards keep a small, steady green light beside their bonus gem. */
 .sp-card__can {
   position: absolute;
-  z-index: 2;
-  right: 6%;
-  bottom: 4%;
-  display: grid;
-  place-items: center;
-  width: calc(var(--w) * 0.2);
-  height: calc(var(--w) * 0.2);
+  z-index: 3;
+  right: 3%;
+  top: 3%;
+  width: clamp(7px, calc(var(--w) * 0.1), 15px);
+  height: clamp(7px, calc(var(--w) * 0.1), 15px);
   border-radius: 50%;
-  font-size: calc(var(--w) * 0.13);
-  font-weight: 800;
-  line-height: 1;
-  color: var(--accent-ink);
-  background: var(--accent-strong);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 8px rgba(240, 198, 90, 0.5);
+  background: #34d67b;
+  border: 1.5px solid #fffaf0;
+  box-shadow: 0 1px 4px #0008;
 }
 /* Blind tag sits in the bottom-right corner, clear of the cost column on the left. */
 .sp-card__blind {
@@ -967,6 +930,7 @@
   justify-content: space-around;
   flex: 1;
   gap: 8px;
+  padding: 12px 6px 16px;
 }
 .sp-bank__3d-host {
   position: absolute;
@@ -2074,7 +2038,9 @@
 }
 
 /* ---------- responsive ---------- */
-@media (max-width: 1240px) {
+/* Stacked single column: phones and portrait tablets. From 900px (landscape iPads) up, the two-column
+   desktop layout applies, with a narrower sidebar below 1241px (see the tablet block further down). */
+@media (max-width: 899px) {
   .sp-table {
     --card-w: clamp(56px, min(calc((100vw - 88px) * 0.124), 8.7vh), 128px);
   }
@@ -2112,7 +2078,14 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1240px) {
+  /* full-screen toggle: icon only below desktop widths, the top bar is crowded (the aria-label still names it) */
+  .sp-fsbtn {
+    padding-inline: 8px;
+  }
+  .sp-fsbtn__label {
+    display: none;
+  }
   .sp-you {
     grid-template-columns: auto 1fr;
   }
@@ -2254,7 +2227,7 @@
 
   /* bank: all six piles on one row */
   .sp-bankcol {
-    --chip-lg: clamp(34px, calc((100vw - 96px) / 6 - 8px), 44px);
+    --chip-lg: clamp(28px, calc((100vw - 120px) / 6 - 8px), 44px);
   }
   .sp-bank__piles {
     flex-wrap: nowrap;
@@ -2507,7 +2480,7 @@
 }
 
 /* Short laptop screens: keep your own area on-screen. */
-@media (max-height: 820px) and (min-width: 1101px) {
+@media (max-height: 820px) and (min-width: 900px) {
   .sp-you {
     padding: 10px 16px;
     gap: 10px 22px;
@@ -2525,7 +2498,7 @@
    above it, and cards grow to whatever the table width and the viewport height allow.
    Width: nobles + market + bank come to ~7.6 card widths plus ~84px of fixed chrome.
    Height: the market is 4.48 card widths tall; --chrome-h is everything else stacked on the page. */
-@media (min-width: 1241px) {
+@media (min-width: 900px) {
   .sp-table {
     --chrome-h: 384px;
     --table-cards: 7.6;
@@ -2540,7 +2513,6 @@
   .sp-table > .sp-nobles {
     grid-column: 1;
     grid-row: 1;
-    transform: translateX(32px);
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: flex-start;
@@ -2590,9 +2562,41 @@
     max-height: none;
   }
 }
-@media (min-width: 1241px) and (max-height: 820px) {
+@media (min-width: 900px) and (max-height: 820px) {
   .sp-table {
     --chrome-h: 336px; /* compact "your area" (see the short-laptop rules above) */
+  }
+}
+
+/* Tablet (landscape iPads, 900–1240px): the same two columns as desktop, with a narrower sidebar
+   (rivals on top, chronicle/chat filling the rest) and a little less padding so the board keeps its size.
+   "Your area" wraps its name onto its own row here (see the max-width: 1240px rule), so the chrome is taller. */
+@media (min-width: 900px) and (max-width: 1240px) {
+  .sp-game {
+    padding: 0 16px 14px;
+  }
+  .sp-topbar {
+    margin: 0 -16px;
+    padding-inline: 16px;
+  }
+  .sp-main {
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 28vw, 340px);
+    gap: 14px;
+  }
+  .sp-left,
+  .sp-side {
+    gap: 14px;
+  }
+  .sp-table {
+    --chrome-h: 420px;
+    /* fallback without container units: viewport minus sidebar, page/table padding and gaps */
+    --card-w: clamp(56px, min(calc((72vw - 162px) / var(--table-cards)), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
+    padding: 22px 16px 18px;
+  }
+}
+@media (min-width: 900px) and (max-width: 1240px) and (max-height: 820px) {
+  .sp-table {
+    --chrome-h: 372px;
   }
 }
 
@@ -2602,7 +2606,7 @@
   .sp-table {
     --card-w: clamp(56px, min(12.4cqi, 8.7vh), 128px);
   }
-  @media (min-width: 1241px) {
+  @media (min-width: 900px) {
     .sp-table {
       --card-w: clamp(56px, min(calc((100cqi - 84px) / var(--table-cards)), calc((100vh - var(--chrome-h)) / 4.48)), 136px);
     }
@@ -2702,4 +2706,34 @@
   .sp-history__summary { padding: 12px; }
   .sp-history__list { padding: 0 12px 10px; max-height: 32vh; }
   .sp-history__entry { grid-template-columns: 24px 8px minmax(0, 1fr); gap: 7px; font-size: 12px; }
+}
+
+/* Reserve room for the model's wooden rail inside the table's own layout box.
+   The vertical inset follows card size as the three market rows grow. */
+.sp-table {
+  padding: calc(var(--card-w) * 0.5 + 24px) max(20px, 6%);
+}
+
+/* One overhead table; the existing WebGL coin stacks sit above the felt. */
+.sp-table > .sp-table__3d-host { grid-area: auto; }
+.sp-table > .sp-table__heading {
+  display: flex;
+  align-items: center;
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+}
+.sp-table:has(.sp-table__3d-host[data-failed='true']) {
+  background: linear-gradient(140deg, #1c2b40, #101b2b);
+  border: 1px solid #a58a5155;
+}
+@media (min-width: 900px) {
+  .sp-table > .sp-table__heading { grid-row: 1; }
+  .sp-table > .sp-nobles, .sp-table > .sp-table__grid { grid-row: 2; }
+}
+
+@media (max-width: 600px) {
+  .sp-table { --card-w: clamp(40px, 14vw, 90px); }
+  @supports (width: 1cqi) {
+    .sp-table { --card-w: clamp(40px, 14cqi, 90px); }
+  }
 }

@@ -2,12 +2,18 @@ import type { ReactNode } from 'react'
 import { GEM_COLORS, TOKEN_COLORS } from '../../game/types'
 import type { GemColor, GemCounts, TokenColor, TokenCounts } from '../../game/types'
 import { GEM_NAME, cx } from './ui'
+import gemShapes from './gemShapes.json'
 
 /** A faceted gem glyph, cut differently per color. Sized by font-size (1em). */
 export function GemIcon({ color, className }: { color: TokenColor; className?: string }) {
   return (
     <span className={cx('sp-gem', `sp-c-${color}`, `sp-gem--${color}`, className)} aria-hidden="true">
-      <span className="sp-gem__cut" />
+      <svg className="sp-gem__cut" viewBox="-1.08 -1.08 2.16 2.16">
+        <polygon points={gemShapes[color].map((p) => p.join(',')).join(' ')} fill="currentColor" />
+        <polygon points={gemShapes[color].map(([x, y]) => `${x * .46},${y * .46}`).join(' ')} fill="white" fillOpacity=".18" />
+        {gemShapes[color].map(([x, y], i) => <line key={i} x1={x} y1={y} x2={x * .46} y2={y * .46} stroke="var(--gem-line, white)" strokeOpacity=".65" strokeWidth=".055" />)}
+        <polygon points={gemShapes[color].map(([x, y]) => `${x * .46},${y * .46}`).join(' ')} fill="none" stroke="var(--gem-line, white)" strokeOpacity=".65" strokeWidth=".055" />
+      </svg>
     </span>
   )
 }

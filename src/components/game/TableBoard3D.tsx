@@ -13,14 +13,15 @@ export function TableBoard3D() {
     if (!host || !canvas) return
 
     let disposed = false
-    let board: THREE.Object3D | null = null
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-7, 7, 4.5, -4.5, 0.1, 80)
-    camera.up.set(0, 1, 0)
-    camera.position.set(0, 23, 13)
+    camera.up.set(0, 0, -1)
+    camera.position.set(0, 24, 0)
     camera.lookAt(0, 0, 0)
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
+    let renderer: THREE.WebGLRenderer
+    try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }) }
+    catch { host.dataset.failed = 'true'; return }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -35,6 +36,20 @@ export function TableBoard3D() {
     fill.position.set(8, 8, -9)
     scene.add(fill)
 
+    const release = (root: THREE.Object3D) => {
+      root.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return
+        object.geometry.dispose()
+        const materials = Array.isArray(object.material) ? object.material : [object.material]
+        materials.forEach((material) => {
+          const map = (material as THREE.MeshStandardMaterial).map
+          map?.dispose()
+          material.dispose()
+        })
+      })
+    }
+    let board: THREE.Object3D | null = null
+    let boardSize = new THREE.Vector3()
     const draw = () => {
       if (disposed) return
       const width = host.clientWidth
@@ -42,13 +57,15 @@ export function TableBoard3D() {
       if (width < 1 || height < 1) return
       renderer.setSize(width, height, false)
       const aspect = width / height
-      const viewWidth = 13.7
+      const viewWidth = 13.0
       const viewHeight = viewWidth / aspect
       camera.left = -viewWidth / 2
       camera.right = viewWidth / 2
       camera.top = viewHeight / 2
       camera.bottom = -viewHeight / 2
       camera.updateProjectionMatrix()
+      // Fit both axes to the responsive table, keeping the felt beneath all UI rows.
+      if (board) board.scale.set(viewWidth / boardSize.x, 1, viewHeight / boardSize.z)
       renderer.render(scene, camera)
     }
 
@@ -58,28 +75,24 @@ export function TableBoard3D() {
     observer.observe(host)
 
     new GLTFLoader().load('/models/splendor-board.glb', ({ scene: loaded }) => {
-      if (disposed) return
+      if (disposed) { release(loaded); return }
       const box = new THREE.Box3().setFromObject(loaded)
       const center = box.getCenter(new THREE.Vector3())
+      boardSize = box.getSize(new THREE.Vector3())
       loaded.position.sub(center)
-      board = loaded
-      scene.add(loaded)
+      board = new THREE.Group()
+      board.add(loaded)
+      scene.add(board)
       draw()
       host.dataset.ready = 'true'
-    }, undefined, (error) => console.error('Could not load the Blender game board.', error))
+    }, undefined, () => { if (!disposed) host.dataset.failed = 'true' })
 
     draw()
     return () => {
       disposed = true
       observer.disconnect()
       renderer.dispose()
-      if (board) scene.remove(board)
-      scene.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return
-        object.geometry.dispose()
-        const materials = Array.isArray(object.material) ? object.material : [object.material]
-        materials.forEach((material) => material.dispose())
-      })
+      release(scene)
     }
   }, [])
 

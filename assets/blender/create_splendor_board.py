@@ -1,5 +1,7 @@
 import bpy
 import os
+import math
+import random
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 BLEND_PATH = os.path.join(os.path.dirname(__file__), 'splendor_board.blend')
@@ -26,8 +28,29 @@ def material(name, color, metallic=0.0, roughness=0.45):
 
 wood = material('MAT-board_walnut', (0.19, 0.095, 0.038), roughness=0.27)
 edge = material('MAT-board_edge_dark', (0.075, 0.034, 0.015), roughness=0.31)
-gold = material('MAT-board_brass', (0.72, 0.43, 0.11), metallic=0.82, roughness=0.24)
+gold = material('MAT-board_brass', (0.72, 0.43, 0.11), metallic=1.0, roughness=0.32)
 felt = material('MAT-board_midnight_felt', (0.025, 0.055, 0.12), roughness=0.92)
+
+def surface_texture(mat, name, base, woodgrain=False):
+    """Small original image textures export with glTF, unlike procedural shader nodes."""
+    rng = random.Random(42)
+    size = 256
+    image = bpy.data.images.new(name, width=size, height=size)
+    pixels = []
+    for y in range(size):
+        for x in range(size):
+            noise = rng.uniform(-.035, .035)
+            grain = math.sin(y * .57 + math.sin(x * .035) * 2.8) * .065 if woodgrain else 0
+            value = 1 + noise + grain
+            pixels.extend([min(1, channel * value) for channel in base] + [1])
+    image.pixels = pixels
+    image.pack()
+    node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+    node.image = image
+    mat.node_tree.links.new(node.outputs['Color'], mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+
+surface_texture(wood, 'Walnut grain', (.38, .235, .14), True)
+surface_texture(felt, 'Woven midnight felt', (.095, .135, .19))
 
 def rounded_box(name, dimensions, location, mat, bevel):
     bpy.ops.mesh.primitive_cube_add(size=1, location=location)

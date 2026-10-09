@@ -137,26 +137,37 @@ Tip: to test alone, open several browser tabs — each tab is a separate player.
 
 Game state is kept in memory: restarting the server ends all games.
 
-## 3D asset setup on another machine
+## Interactive 3D table and Blender assets
+
+The game opens in **3D table** view: drag the felt to change the viewing angle,
+scroll or pinch to zoom, and use **Top view** or **Reset view** to frame the board.
+Click a card to buy or reserve it, or click a gem stack to select tokens. Selected
+coins move to the front of the board; click them to put them back. The usual
+**Take gems** button confirms the move. **Flat view** keeps the original layout,
+and is also used automatically if WebGL or an asset cannot load. Keyboard users
+can tab through the pieces in 3D view; focusing a piece raises it and shows its
+name and card cost.
+
+The walnut/felt board, solid-color matte coins with contrasting printed gem symbols, and rounded card stock are made
+in Blender and exported to `public/models/`. Each coin has a distinct faceted gem cut
+(diamond, sapphire, emerald, ruby, onyx, or the marquise gold wildcard); the outlines
+in `src/components/game/gemShapes.json` are shared by Blender, flat glyphs, and 3D card faces.
+All six coin variants are bundled in one 79 KB GLB. The card faces use the app's original
+artwork and current game data. No external textures or asset services are needed.
+Editable sources are in `assets/blender/splendor_board.blend` and
+`assets/blender/splendor-pieces.blend`.
+
+To regenerate the integrated assets (tested with Blender 5.2.2):
+
+```bash
+blender --background --python assets/blender/create_splendor_board.py
+blender --background --python assets/blender/create_table_pieces.py
+```
+
+On macOS, replace `blender` with
+`/Applications/Blender.app/Contents/MacOS/Blender` if it is not on your PATH.
 
 The four Blender skills and their references are checked into `.agents/skills/`.
-Three.js and its TypeScript definitions are declared in `package.json` and pinned
-in `pnpm-lock.yaml`. After checking out the repo, run `pnpm install`.
-
-Install Blender separately, then run the asset generator from the repo root:
-
-```bash
-blender --background --python scripts/blender/create_assets.py
-```
-
-On macOS with Blender in Applications:
-
-```bash
-/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/create_assets.py
-```
-
-The script targets Blender 4.5 and creates gemstone and token PNGs plus a
-`merchant-display.glb` in `public/assets/3d/`, and an editable scene at
-`assets/blender/splendor-assets.blend`. It creates its output folders automatically.
-The generated assets are not yet integrated into the UI. The script has not yet
-been run or visually verified because Blender was unavailable on this machine.
+Three.js and its TypeScript definitions are pinned in `pnpm-lock.yaml`.
+`scripts/blender/create_assets.py` is a separate optional generator for product
+renders and a collector display; those assets are not used by the game table.
