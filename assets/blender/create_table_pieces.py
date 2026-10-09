@@ -106,7 +106,7 @@ for color, points in shapes.items():
     obj.parent = group
     mesh.materials.append(symbol)
     token_objects.extend([body, obj])
-export('splendor-token.glb', token_objects)
+export('gemcourt-token.glb', token_objects)
 # Separate variants in the editable source only, after the origin-centered export.
 for index, color in enumerate(shapes):
     bpy.data.objects['GEO-token_' + color].location = ((index%3)*1.15, (index//3)*1.15, 0)
@@ -130,6 +130,6 @@ mesh.update()
 card = bpy.data.objects.new('GEO-card_stock', mesh)
 bpy.context.collection.objects.link(card)
 mesh.materials.append(paper)
-export('splendor-card.glb', [card])
+export('gemcourt-card.glb', [card])
 card.location.x = 2
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT / 'assets' / 'blender' / 'splendor-pieces.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT / 'assets' / 'blender' / 'gemcourt-pieces.blend'))

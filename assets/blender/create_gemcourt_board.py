@@ -4,8 +4,8 @@ import math
 import random
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-BLEND_PATH = os.path.join(os.path.dirname(__file__), 'splendor_board.blend')
-GLB_PATH = os.path.join(ROOT, 'public', 'models', 'splendor-board.glb')
+BLEND_PATH = os.path.join(os.path.dirname(__file__), 'gemcourt_board.blend')
+GLB_PATH = os.path.join(ROOT, 'public', 'models', 'gemcourt-board.glb')
 os.makedirs(os.path.dirname(GLB_PATH), exist_ok=True)
 
 bpy.ops.object.select_all(action='SELECT')

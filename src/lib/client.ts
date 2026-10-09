@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameAction } from '~/game/types'
 import type { ClientMessage, OpResult, RoomInfo, RoomOp, RoomView, ServerMessage } from './protocol'
 import { PING_MS, WS_PATH } from './protocol'
+import { STORAGE_KEYS, readStored } from './storage'
 
 // ---------- Session storage (per browser tab, so several tabs = several players) ----------
 
@@ -10,8 +11,8 @@ interface Session {
   playerId: string
 }
 
-const sessionKey = (code: string) => `splendor:session:${code}`
-const NAME_KEY = 'splendor:name'
+const sessionKey = STORAGE_KEYS.session
+const NAME_KEY = STORAGE_KEYS.name
 
 function safe<T>(fn: () => T, fallback: T): T {
   try {
@@ -22,7 +23,7 @@ function safe<T>(fn: () => T, fallback: T): T {
 }
 
 export function loadSession(code: string): Session | null {
-  return safe(() => JSON.parse(sessionStorage.getItem(sessionKey(code)) ?? 'null'), null)
+  return safe(() => JSON.parse(readStored(sessionStorage, sessionKey(code)) ?? 'null'), null)
 }
 export function saveSession(code: string, s: Session) {
   safe(() => sessionStorage.setItem(sessionKey(code), JSON.stringify(s)), undefined)
@@ -31,7 +32,7 @@ export function clearSession(code: string) {
   safe(() => sessionStorage.removeItem(sessionKey(code)), undefined)
 }
 export function loadName(): string {
-  return safe(() => localStorage.getItem(NAME_KEY) ?? '', '')
+  return safe(() => readStored(localStorage, NAME_KEY) ?? '', '')
 }
 export function saveName(name: string) {
   safe(() => localStorage.setItem(NAME_KEY, name), undefined)

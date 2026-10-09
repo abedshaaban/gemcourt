@@ -145,7 +145,7 @@ export function Bank3D({ bank, colors, selection, onReady }: Props) {
     window.addEventListener('resize', resizeAndDraw)
 
     new GLTFLoader().load(
-      '/models/splendor-token.glb',
+      '/models/gemcourt-token.glb',
       ({ scene: loaded }) => {
         if (disposed) {
           loaded.traverse((object) => {

@@ -56,8 +56,8 @@ export const CHAT_WINDOW_MS = 5000
 
 // Keep state on globalThis so Vite's dev-server module reloads don't wipe running games, and so the
 // socket handler and the HTTP routes share one store whichever module instance they were loaded from.
-const STORE_KEY = Symbol.for('splendor.rooms')
-const SWEEPER_KEY = Symbol.for('splendor.roomSweeper')
+const STORE_KEY = Symbol.for('gemcourt.rooms')
+const SWEEPER_KEY = Symbol.for('gemcourt.roomSweeper')
 const g = globalThis as { [STORE_KEY]?: Map<string, Room>; [SWEEPER_KEY]?: ReturnType<typeof setInterval> }
 const store = (g[STORE_KEY] ??= new Map<string, Room>())
 
