@@ -1,0 +1,18 @@
+{
+  "fps": 30,
+  "segments": [
+    { "clip": "title", "start": 0.2, "end": 2.9, "speed": 1.0 },
+    { "clip": "lobby", "start": 0.9, "end": 4.75, "speed": 1.15, "transition": "fade", "xfade": 0.5 },
+    { "clip": "lobby", "start": 5.4, "end": 9.98, "speed": 1.1, "transition": "fade", "xfade": 0.35 },
+    { "clip": "game", "start": 1.3, "end": 9.7, "speed": 1.2, "transition": "smoothleft", "xfade": 0.5 },
+    { "clip": "game", "start": 11.5, "end": 19.8, "speed": 1.3, "transition": "fade", "xfade": 0.4 },
+    { "clip": "end", "start": 0.0, "end": 4.0, "speed": 1.0, "transition": "fade", "xfade": 0.6 }
+  ],
+  "captions": [
+    { "id": "cap1", "segment": 1, "padIn": 0.35, "padOut": 0.25, "html": "<i>One click</i> to open a table" },
+    { "id": "cap2", "segment": 2, "padIn": 0.45, "padOut": 0.35, "html": "<i>Share the code</i> — friends join from any device" },
+    { "id": "cap3", "segment": 3, "padIn": 1.6, "padOut": 0.35, "html": "<i>Buy cards,</i> collect gems, chase prestige" },
+    { "id": "cap4", "segment": 4, "padIn": 0.35, "padOut": 0.45, "html": "<i>Every move</i> syncs live to the whole table" }
+  ],
+  "cardDurations": { "title": 3600, "end": 4200 }
+}

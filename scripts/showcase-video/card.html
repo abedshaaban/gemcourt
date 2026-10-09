@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600&display=block" rel="stylesheet">
+<style>
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden}
+  body{background:radial-gradient(ellipse 70% 60% at 50% 42%, #1f2840 0%, #121827 55%, #0b0f19 100%);
+    font-family:Inter,sans-serif;color:#e9e2cf;display:flex;align-items:center;justify-content:center}
+  body.transparent{background:transparent}
+  .wrap{text-align:center;transform:scale(.96);opacity:0}
+  .go .wrap{animation:in 1.3s cubic-bezier(.2,.7,.2,1) forwards, drift 6s linear forwards}
+  @keyframes in{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  @keyframes drift{from{transform:scale(.96)}to{transform:scale(1.03)}}
+  .eyebrow{font:600 22px Inter;letter-spacing:.42em;text-transform:uppercase;color:#c9a75a;opacity:.9;margin-bottom:26px}
+  h1{margin:0;font:900 190px/1 Cinzel,serif;letter-spacing:.14em;padding-left:.14em;
+    background:linear-gradient(180deg,#fbe3a0 0%,#e7b54b 48%,#b9832c 100%);-webkit-background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 40px rgba(231,181,75,.28)) drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+  .tag{margin-top:26px;font:italic 500 50px 'Cormorant Garamond',serif;color:#efe6d0}
+  .gems{display:flex;gap:26px;justify-content:center;margin:40px 0 0}
+  .gem{width:30px;height:30px;border-radius:50%;opacity:0;transform:translateY(14px) scale(.6);
+    box-shadow:inset 0 -5px 8px rgba(0,0,0,.35), inset 0 4px 6px rgba(255,255,255,.45), 0 4px 12px rgba(0,0,0,.5)}
+  .go .gem{animation:pop .6s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes pop{to{opacity:1;transform:none}}
+  .meta{margin-top:40px;font:500 26px Inter;letter-spacing:.06em;color:#a9b2c8}
+  .meta b{color:#e7b54b;font-weight:600;margin:0 14px}
+  .cta{display:inline-block;margin-top:44px;padding:20px 46px;border-radius:14px;font:600 30px Inter;color:#1b1406;
+    background:linear-gradient(180deg,#f3cf74,#d9a441);box-shadow:0 10px 30px rgba(217,164,65,.35)}
+  /* caption (lower third) */
+  .cap{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);white-space:nowrap;
+    padding:20px 40px;border-radius:999px;background:rgba(10,13,22,.82);border:1px solid rgba(231,181,75,.45);
+    box-shadow:0 18px 50px rgba(0,0,0,.55);font:600 36px Inter;color:#f4ecd8;letter-spacing:.01em}
+  .cap i{font:italic 600 40px 'Cormorant Garamond',serif;color:#e7b54b;margin-right:14px}
+</style>
+</head>
+<body>
+<script>
+  const p = new URLSearchParams(location.search)
+  const mode = p.get('mode')
+  const gems = ['#f4f1ea', '#2f6fd6', '#1f9a5b', '#d43a4a', '#3a3a40', '#e8b53c']
+  const gemRow = '<div class="gems">' + gems.map((c, i) => `<span class="gem" style="background:radial-gradient(circle at 35% 30%, #fff8 0, ${c} 45%, ${c} 100%);animation-delay:${0.45 + i * 0.09}s"></span>`).join('') + '</div>'
+  if (mode === 'title') {
+    document.body.innerHTML = `<div class="wrap">
+      <div class="eyebrow">Local multiplayer board game</div>
+      <h1>Splendor</h1>
+      <div class="tag">Play Splendor with friends — right in your browser</div>
+      ${gemRow}</div>`
+  } else if (mode === 'end') {
+    document.body.innerHTML = `<div class="wrap">
+      <h1 style="font-size:150px">Splendor</h1>
+      <div class="tag">Create a game. Share the code. Play.</div>
+      ${gemRow}
+      <div class="meta">2–6 players<b>·</b>Any device on your Wi-Fi<b>·</b>No install</div>
+      </div>`
+  } else if (mode === 'cap') {
+    document.body.className = 'transparent'
+    document.body.innerHTML = `<div class="cap">${p.get('text')}</div>`
+  }
+  document.fonts.ready.then(() => { window.__ready = true })
+  window.go = () => document.body.classList.add('go')
+</script>
+</body>
+</html>

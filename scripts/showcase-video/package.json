@@ -1,0 +1,17 @@
+{
+  "name": "splendor-showcase-video",
+  "private": true,
+  "type": "module",
+  "description": "Records and edits the Splendor showcase video (Playwright + ffmpeg).",
+  "scripts": {
+    "video": "./run.sh",
+    "record": "./run.sh --no-edit",
+    "cards": "node record.mjs --only cards",
+    "edit": "python3 edit.py",
+    "reedit": "node record.mjs --only cards && python3 edit.py"
+  },
+  "dependencies": {
+    "playwright": "^1.64.0",
+    "ws": "^8.22.0"
+  }
+}
