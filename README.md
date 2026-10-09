@@ -10,14 +10,12 @@ the server; everyone plays in a browser, on your Wi-Fi or, with `pnpm play:onlin
 
 <!--
   GitHub only shows an inline video player for files uploaded through its web UI.
-  For one: edit this README on github.com, drag docs/videos/splendor-showcase.mp4 into the editor,
+  For one: edit this README on github.com, drag docs/videos/gemcourt-showcase.mp4 into the editor,
   and replace the link below with the generated https://github.com/user-attachments/... URL.
-  The video, its GIF preview and the screenshots below were captured before the rename to Gemcourt,
-  so they still show the old title; re-record with scripts/showcase-video/ to refresh them.
 -->
-[![Animated preview of a Gemcourt game: buying a card and taking gems on the table](docs/images/showcase-preview.gif)](docs/videos/splendor-showcase.mp4)
+[![Animated preview of a Gemcourt game: buying a card and taking gems on the table](docs/images/showcase-preview.gif)](docs/videos/gemcourt-showcase.mp4)
 
-[▶ Watch the 25-second showcase video](docs/videos/splendor-showcase.mp4)
+[▶ Watch the 25-second showcase video](docs/videos/gemcourt-showcase.mp4)
 
 ![Gemcourt 3D table during a three-player game, with gem stacks, purchased cards, player scores, and move history](docs/images/game-3d.png)
 
@@ -41,10 +39,10 @@ the host chooses the winning score and starts when everyone is ready.
 ### A game in progress
 
 The **3D table** above shows a match after several rounds, with purchased cards,
-reserved cards, gem balances, and scores. Switch to **Flat view** for a close-up
-of the same card market and token bank. Rival panels and the chronicle update as players take turns.
+gem balances, and scores. Below is a close-up of the same card market, nobles and
+token bank. Rival panels and the chronicle update as players take turns.
 
-![The same three-player game in Flat view, showing nobles, the card market, token bank, player collection, and move history](docs/images/game-flat.png)
+![Close-up of the same three-player game's table: nobles, the three-tier card market, and the token bank](docs/images/game-flat.png)
 
 These previews were captured locally. To play live with friends, follow the setup below;
 `pnpm play:online` generates a new public invitation URL for each session.
