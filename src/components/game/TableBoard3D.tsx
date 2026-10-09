@@ -74,7 +74,7 @@ export function TableBoard3D() {
     const observer = new ResizeObserver(draw)
     observer.observe(host)
 
-    new GLTFLoader().load('/models/splendor-board.glb', ({ scene: loaded }) => {
+    new GLTFLoader().load('/models/gemcourt-board.glb', ({ scene: loaded }) => {
       if (disposed) { release(loaded); return }
       const box = new THREE.Box3().setFromObject(loaded)
       const center = box.getCenter(new THREE.Vector3())

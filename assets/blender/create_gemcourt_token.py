@@ -5,8 +5,8 @@ import os
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-BLEND_PATH = os.path.join(os.path.dirname(__file__), 'splendor_token.blend')
-GLB_PATH = os.path.join(ROOT, 'public', 'models', 'splendor-token.glb')
+BLEND_PATH = os.path.join(os.path.dirname(__file__), 'gemcourt_token.blend')
+GLB_PATH = os.path.join(ROOT, 'public', 'models', 'gemcourt-token.glb')
 os.makedirs(os.path.dirname(GLB_PATH), exist_ok=True)
 
 # Start with a clean, reproducible scene.

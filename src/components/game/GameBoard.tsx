@@ -25,6 +25,7 @@ import { MyBar, OpponentPanel, YourArea } from './PlayerPanels'
 import { RulesPanel } from './RulesPanel'
 import { GEM_NAME, GEM_PLURAL, ROMAN, avatarColor, cx, phaseVerb } from './ui'
 import { useTurnAlert } from './useTurnAlert'
+import { STORAGE_KEYS, readStored } from '../../lib/storage'
 
 export interface GameBoardProps {
   state: PublicGameState
@@ -181,7 +182,7 @@ export function GameBoard({
   const [toast, setToast] = useState<{ id: number; message: string; kind?: 'noble' } | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [tutorialStep, setTutorialStep] = useState<number>(() => {
-    try { return localStorage.getItem('splendor-tutorial-done') ? -1 : 0 } catch { return -1 }
+    try { return readStored(localStorage, STORAGE_KEYS.tutorialDone) ? -1 : 0 } catch { return -1 }
   })
   const [confirmLeave, setConfirmLeave] = useState(false)
   // Full screen (iPad Safari only has the webkit-prefixed API; iPhone Safari has none, so the button hides).
@@ -454,7 +455,7 @@ export function GameBoard({
   }, [tutorialStep, state.winningPoints, chat !== undefined])
   const closeTutorial = () => {
     setTutorialStep(-1)
-    try { localStorage.setItem('splendor-tutorial-done', '1') } catch { /* storage may be disabled */ }
+    try { localStorage.setItem(STORAGE_KEYS.tutorialDone, '1') } catch { /* storage may be disabled */ }
   }
 
   // Phone: when my turn starts, bring the table (market, bank, tray) into view under the sticky top bar —

@@ -20,8 +20,8 @@ export interface WsHandler {
   connect(ws: WebSocket, req: IncomingMessage): void
 }
 
-const INFO_KEY = Symbol.for('splendor.serverInfo')
-const WS_KEY = Symbol.for('splendor.wsHandler')
+const INFO_KEY = Symbol.for('gemcourt.serverInfo')
+const WS_KEY = Symbol.for('gemcourt.wsHandler')
 const g = globalThis as { [INFO_KEY]?: ServerInfo; [WS_KEY]?: WsHandler }
 
 export function serverInfo(): ServerInfo {

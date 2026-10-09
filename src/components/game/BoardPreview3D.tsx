@@ -572,7 +572,7 @@ export function BoardPreview3D(props: Props) {
       else loadedAssets.push(result.scene)
       return result.scene
     }
-    void Promise.all([load('/models/splendor-board.glb'), load('/models/splendor-token.glb'), load('/models/splendor-card.glb')])
+    void Promise.all([load('/models/gemcourt-board.glb'), load('/models/gemcourt-token.glb'), load('/models/gemcourt-card.glb')])
       .then(([board, token, card]) => {
         if (disposed) return
         templates = { board, token, card }

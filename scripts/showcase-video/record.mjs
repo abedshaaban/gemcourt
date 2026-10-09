@@ -49,7 +49,7 @@ const maskLanScript = () => {
 
 async function newPage() {
   const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
-  await ctx.addInitScript(() => { try { localStorage.setItem('splendor-tutorial-done', '1'); localStorage.removeItem('splendor:name') } catch {} })
+  await ctx.addInitScript(() => { try { localStorage.setItem('gemcourt-tutorial-done', '1'); localStorage.removeItem('gemcourt:name') } catch {} })
   await ctx.addInitScript(cursorScript)
   if (MASK_LAN) await ctx.addInitScript(maskLanScript)
   const page = await ctx.newPage()
@@ -172,7 +172,7 @@ if (ONLY.includes('game')) {
   await page.getByRole('button', { name: /Start game/ }).click()
   await sleep(1500)
   const ss = JSON.parse(await page.evaluate(() => JSON.stringify(sessionStorage)))
-  const hs = JSON.parse(ss[`splendor:session:${code}`])
+  const hs = JSON.parse(ss[`gemcourt:session:${code}`])
   const host = new Bot(BASE, code, 'Maya')
   await host.connect(hs.token)
   host.token = hs.token; host.id = hs.playerId

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { STORAGE_KEYS, readStored } from '../../lib/storage'
 
 const BASE_TITLE = 'Gemcourt'
 const TURN_TITLE = '● Your turn — Gemcourt'
 const FLASH_TITLE = '○ YOUR TURN — Gemcourt'
-const SOUND_KEY = 'splendor:turn-sound'
+const SOUND_KEY = STORAGE_KEYS.turnSound
 
 /** Browsers block sound and vibration until the page has had a tap or click; skip quietly until then. */
 function hasUserGesture(): boolean {
@@ -51,7 +52,7 @@ export function useTurnAlert(isMyTurn: boolean): { soundOn: boolean; toggleSound
   // Saved preference (read after mount to avoid a hydration mismatch).
   useEffect(() => {
     try {
-      const on = localStorage.getItem(SOUND_KEY) !== 'off'
+      const on = readStored(localStorage, SOUND_KEY) !== 'off'
       soundRef.current = on
       setSoundOn(on)
     } catch {

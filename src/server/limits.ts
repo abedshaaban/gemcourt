@@ -150,7 +150,7 @@ interface Limits {
   connections: Counter // open sockets per IP
 }
 
-const KEY = Symbol.for('splendor.limits')
+const KEY = Symbol.for('gemcourt.limits')
 // On globalThis so the HTTP routes and the socket handler share one set, whatever module instance they use.
 export const limits: Limits = ((globalThis as { [KEY]?: Limits })[KEY] ??= {
   create: new SlidingWindowLimiter(10, 10 * 60_000),

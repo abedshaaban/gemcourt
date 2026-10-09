@@ -169,13 +169,13 @@ in Blender and exported to `public/models/`. Each coin has a distinct faceted ge
 in `src/components/game/gemShapes.json` are shared by Blender, flat glyphs, and 3D card faces.
 All six coin variants are bundled in one 79 KB GLB. The card faces use the app's original
 artwork and current game data. No external textures or asset services are needed.
-Editable sources are in `assets/blender/splendor_board.blend` and
-`assets/blender/splendor-pieces.blend`.
+Editable sources are in `assets/blender/gemcourt_board.blend` and
+`assets/blender/gemcourt-pieces.blend`.
 
 To regenerate the integrated assets (tested with Blender 5.2.2):
 
 ```bash
-blender --background --python assets/blender/create_splendor_board.py
+blender --background --python assets/blender/create_gemcourt_board.py
 blender --background --python assets/blender/create_table_pieces.py
 ```
 
