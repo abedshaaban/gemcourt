@@ -1,13 +1,13 @@
 # Showcase video
 
-Records and cuts a ~25-second promo video of Splendor: a title card, opening a table and filling the waiting room,
+Records and cuts a ~25-second promo video of Gemcourt: a title card, opening a table and filling the waiting room,
 a mid-game turn on the 3D table (buy a card, rivals move, take gems), and an end card, with captions.
 Everything is scripted, so you can record it again after the UI changes, or recut it without re-recording.
 
 Outputs, in `out/`:
 
-- `splendor-showcase.mp4`: 1920×1080, 30 fps, H.264 with a silent AAC track
-- `splendor-showcase-1080x1350.mp4`: a 4:5 feed version (the same video centred over a blurred copy of itself)
+- `gemcourt-showcase.mp4`: 1920×1080, 30 fps, H.264 with a silent AAC track
+- `gemcourt-showcase-1080x1350.mp4`: a 4:5 feed version (the same video centred over a blurred copy of itself)
 
 ## Prerequisites
 

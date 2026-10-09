@@ -7,7 +7,7 @@ export { avatarColor, initial } from '~/components/game/ui'
 export function Brand({ tagline = 'A game of Renaissance gem merchants' }: { tagline?: string }) {
   return (
     <header className="brand">
-      <h1>SPLENDOR</h1>
+      <h1>GEMCOURT</h1>
       <p>{tagline}</p>
       <div className="gem-row" aria-hidden>
         {[...GEM_COLORS, 'gold' as const].map((c) => (

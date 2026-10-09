@@ -525,7 +525,7 @@ export function GameBoard({
       {/* ---------- top bar ---------- */}
       <header className="sp-topbar">
         <div className="sp-topbar__brand">
-          <span className="sp-brand">Splendor</span>
+          <span className="sp-brand">Gemcourt</span>
           <span className="sp-round">
             Round {round}
             {!me && <span className="badge">Spectating</span>}
@@ -782,7 +782,7 @@ export function GameBoard({
       <div className={cx('sp-drawer-scrim', rulesOpen && 'is-open')} onClick={() => setRulesOpen(false)} aria-hidden="true" />
       <aside id="sp-rules-drawer" className={cx('sp-drawer', rulesOpen && 'is-open')} aria-label="Rules" aria-hidden={!rulesOpen} inert={!rulesOpen}>
         <header className="sp-drawer__head">
-          <h2 className="sp-drawer__title">Rules of Splendor</h2>
+          <h2 className="sp-drawer__title">Rules of Gemcourt</h2>
           <button type="button" className="sp-iconbtn" onClick={() => setRulesOpen(false)} aria-label="Close rules"><X size={16} aria-hidden="true" /></button>
         </header>
         <div className="sp-drawer__body">

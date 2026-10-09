@@ -1,6 +1,6 @@
 import type { Card } from './types'
 
-// Official Splendor base game development cards (90): tier 1 = 40, tier 2 = 30, tier 3 = 20.
+// Standard base-game development cards (90): tier 1 = 40, tier 2 = 30, tier 3 = 20.
 // Cost order in helper: white, blue, green, red, black.
 function c(id: string, tier: 1 | 2 | 3, bonus: Card['bonus'], points: number, white: number, blue: number, green: number, red: number, black: number): Card {
   return { id, tier, bonus, points, cost: { white, blue, green, red, black } }

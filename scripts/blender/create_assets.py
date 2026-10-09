@@ -1,6 +1,6 @@
 """Run with Blender --background --python scripts/blender/create_assets.py.
 
-Creates original Splendor assets; no external textures or asset licenses needed.
+Creates original Gemcourt assets; no external textures or asset licenses needed.
 """
 import bpy
 import math
@@ -187,5 +187,5 @@ camera.data.ortho_scale = 8.5
 render('merchant-display', [o for o in scene.objects if o.type == 'MESH'], 1000)
 sources = ROOT/'assets'/'blender'
 sources.mkdir(parents=True, exist_ok=True)
-bpy.ops.wm.save_as_mainfile(filepath=str(sources/'splendor-assets.blend'))
-print('SPLENDOR: assets exported to', OUT)
+bpy.ops.wm.save_as_mainfile(filepath=str(sources/'gemcourt-assets.blend'))
+print('GEMCOURT: assets exported to', OUT)

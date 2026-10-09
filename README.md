@@ -1,19 +1,25 @@
-# Splendor (local multiplayer)
+# Gemcourt (local multiplayer)
 
-A local-network implementation of the board game **Splendor** (standard base-game rules for 2–4 players,
-extended to 5–6), built with TanStack Start + React. Your machine is the server; everyone plays in a browser,
-on your Wi-Fi or, with `pnpm play:online`, from anywhere.
+**Gemcourt** is a local-network gem-trading card game for the browser, inspired by the board game Splendor
+(standard base-game rules for 2–4 players, extended to 5–6), built with TanStack Start + React. Your machine is
+the server; everyone plays in a browser, on your Wi-Fi or, with `pnpm play:online`, from anywhere.
+
+> **Disclaimer:** Gemcourt is a fan-made, unofficial implementation inspired by the board game Splendor.
+> It is not affiliated with, endorsed by, or sponsored by Space Cowboys or Asmodee.
+> Splendor is a trademark of its respective owner.
 
 <!--
   GitHub only shows an inline video player for files uploaded through its web UI.
   For one: edit this README on github.com, drag docs/videos/splendor-showcase.mp4 into the editor,
   and replace the link below with the generated https://github.com/user-attachments/... URL.
+  The video, its GIF preview and the screenshots below were captured before the rename to Gemcourt,
+  so they still show the old title; re-record with scripts/showcase-video/ to refresh them.
 -->
-[![Animated preview of a Splendor game: buying a card and taking gems on the table](docs/images/showcase-preview.gif)](docs/videos/splendor-showcase.mp4)
+[![Animated preview of a Gemcourt game: buying a card and taking gems on the table](docs/images/showcase-preview.gif)](docs/videos/splendor-showcase.mp4)
 
 [▶ Watch the 25-second showcase video](docs/videos/splendor-showcase.mp4)
 
-![Splendor 3D table during a three-player game, with gem stacks, purchased cards, player scores, and move history](docs/images/game-3d.png)
+![Gemcourt 3D table during a three-player game, with gem stacks, purchased cards, player scores, and move history](docs/images/game-3d.png)
 
 ## App previews
 
@@ -23,7 +29,7 @@ Screenshots from the running app, showing the journey from opening a table to a 
 
 Start a new table or enter a friend's six-letter game code.
 
-![Splendor home screen with Create game and Join game controls](docs/images/home.png)
+![Gemcourt home screen with Create game and Join game controls](docs/images/home.png)
 
 ### Live waiting room
 
@@ -180,3 +186,8 @@ The four Blender skills and their references are checked into `.agents/skills/`.
 Three.js and its TypeScript definitions are pinned in `pnpm-lock.yaml`.
 `scripts/blender/create_assets.py` is a separate optional generator for product
 renders and a collector display; those assets are not used by the game table.
+
+## License
+
+Gemcourt's source code is released under the [MIT License](LICENSE). The license covers this project's own code and
+assets only; it grants no rights to the Splendor name or any third-party trademarks.

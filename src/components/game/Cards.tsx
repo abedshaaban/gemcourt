@@ -136,7 +136,7 @@ export function CardBack({
     >
       <span className="sp-back__frame">
         <span className="sp-back__numeral">{ROMAN[tier]}</span>
-        {deck && <span className="sp-back__title">Splendor</span>}
+        {deck && <span className="sp-back__title">Gemcourt</span>}
       </span>
       {deck && (
         <span className="sp-back__count">

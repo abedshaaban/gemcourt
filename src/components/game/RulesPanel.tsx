@@ -1,6 +1,6 @@
 import { GemIcon } from './Gem'
 
-/** Concise summary of the standard Splendor rules. Rendered inside the board's rules drawer. */
+/** Concise summary of the standard game rules. Rendered inside the board's rules drawer. */
 export function RulesPanel() {
   return (
     <div className="sp-rules">

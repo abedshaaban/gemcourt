@@ -9,7 +9,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-      { title: 'Splendor' },
+      { title: 'Gemcourt' },
       { name: 'theme-color', content: '#0f1420' },
     ],
     links: [

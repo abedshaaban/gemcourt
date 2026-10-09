@@ -40,7 +40,7 @@ export function renderQr(text: string): string[] {
 /** Heading, QR code and URL, framed by blank lines. */
 export function printQrBanner(log: (msg?: string) => void, heading: string, url: string, extra: string[] = []) {
   log('')
-  log(`  ${gold(bold('◆ SPLENDOR'))}  ${heading}`)
+  log(`  ${gold(bold('◆ GEMCOURT'))}  ${heading}`)
   log('')
   for (const row of renderQr(url)) log(`  ${row}`)
   log('')

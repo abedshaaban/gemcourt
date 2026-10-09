@@ -101,7 +101,7 @@ const fail = (error: string): Err => ({ ok: false, error })
 
 export function createGame(players: { id: string; name: string }[], rng: () => number = Math.random, winningPoints = WINNING_POINTS): GameState {
   if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
-    throw new Error(`Splendor needs ${MIN_PLAYERS}-${MAX_PLAYERS} players`)
+    throw new Error(`A game needs ${MIN_PLAYERS}-${MAX_PLAYERS} players`)
   }
   if (new Set(players.map((p) => p.id)).size !== players.length) {
     throw new Error('Player ids must be unique')

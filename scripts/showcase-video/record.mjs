@@ -21,7 +21,7 @@ if (needsServer) {
     const r = await fetch(BASE)
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
   } catch (e) {
-    console.error(`[showcase] No Splendor server at ${BASE} (${e.message}). Start one with run.sh, or pass --port.`)
+    console.error(`[showcase] No Gemcourt server at ${BASE} (${e.message}). Start one with run.sh, or pass --port.`)
     process.exit(1)
   }
 }
